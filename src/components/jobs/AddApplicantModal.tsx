@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { useRecruitment } from '../../context/RecruitmentContext';
 import { X, UserPlus } from 'lucide-react';
 
@@ -66,7 +66,7 @@ export const AddApplicantModal: React.FC<AddApplicantModalProps> = ({ isOpen, on
             </div>
           </div>
 
-          <button onClick={onClose} className="text-secondary hover:text-white p-1 rounded-lg">
+          <button onClick={onClose} className="text-secondary hover:text-primary p-1 rounded-lg">
             <X className="w-5 h-5" />
           </button>
         </div>

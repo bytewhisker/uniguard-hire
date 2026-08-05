@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { useRecruitment } from '../../context/RecruitmentContext';
 import { X, Calendar } from 'lucide-react';
 
@@ -53,7 +53,7 @@ export const ScheduleInterviewModal: React.FC<ScheduleInterviewModalProps> = ({
               <p className="text-xs text-secondary">Set interview slot for security guard screening</p>
             </div>
           </div>
-          <button onClick={onClose} className="text-secondary hover:text-white p-1 rounded-lg">
+          <button onClick={onClose} className="text-secondary hover:text-primary p-1 rounded-lg">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -68,7 +68,7 @@ export const ScheduleInterviewModal: React.FC<ScheduleInterviewModalProps> = ({
             >
               {applicants.map(a => (
                 <option key={a.id} value={a.id}>
-                  {a.fullName} â€” {a.appliedJobTitle} (SIA: {a.siaLicenceNo})
+                  {a.fullName} — {a.appliedJobTitle} (SIA: {a.siaLicenceNo})
                 </option>
               ))}
             </select>

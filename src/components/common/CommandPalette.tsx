@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRecruitment } from '../../context/RecruitmentContext';
 import { Search, User, Briefcase, CheckSquare, ShieldCheck, X } from 'lucide-react';
 import type { ActivePage } from '../../types/recruitment';
@@ -135,11 +135,11 @@ export const CommandPalette: React.FC = () => {
                         {applicant.fullName.charAt(0)}
                       </div>
                       <div>
-                        <div className="font-medium text-primary group-hover:text-white">
+                        <div className="font-medium text-primary group-hover:text-primary">
                           {applicant.fullName}
                         </div>
                         <div className="text-[11px] text-tertiary">
-                          {applicant.appliedJobTitle} â€¢ SIA: {applicant.siaLicenceNo}
+                          {applicant.appliedJobTitle} • SIA: {applicant.siaLicenceNo}
                         </div>
                       </div>
                     </div>
@@ -170,11 +170,11 @@ export const CommandPalette: React.FC = () => {
                     className="w-full flex items-center justify-between px-3 py-2 rounded-lg hover:bg-panel-2 text-left transition-colors group"
                   >
                     <div>
-                      <div className="font-medium text-primary group-hover:text-white">
+                      <div className="font-medium text-primary group-hover:text-primary">
                         {job.title}
                       </div>
                       <div className="text-[11px] text-tertiary">
-                        {job.location} â€¢ Â£{job.payRate.toFixed(2)}/hr
+                        {job.location} • £{job.payRate.toFixed(2)}/hr
                       </div>
                     </div>
                     <span className="text-xs text-secondary font-mono">

@@ -127,7 +127,7 @@ export const Sidebar: React.FC = () => {
                 onClick={() => setActivePage(item.id)}
                 className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-all ${
                   isActive 
-                    ? 'bg-panel-2 text-white border border-line-strong shadow-sm' 
+                    ? 'bg-panel-2 text-primary border border-line-strong shadow-sm' 
                     : 'text-secondary hover:text-primary hover:bg-panel-dim'
                 }`}
               >

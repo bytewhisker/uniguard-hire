@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { useRecruitment } from '../../context/RecruitmentContext';
 import { CheckCircle2, AlertTriangle, XCircle, Info, X } from 'lucide-react';
 
@@ -41,7 +41,7 @@ export const ToastContainer: React.FC = () => {
             </div>
             <button
               onClick={() => removeToast(toast.id)}
-              className="text-secondary hover:text-white p-1 rounded-md transition-colors shrink-0"
+              className="text-secondary hover:text-primary p-1 rounded-md transition-colors shrink-0"
             >
               <X className="w-4 h-4" />
             </button>

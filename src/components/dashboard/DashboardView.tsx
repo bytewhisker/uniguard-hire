@@ -115,11 +115,11 @@ export const DashboardView: React.FC = () => {
   };
 
   const pipeline = [
-    { label: 'New', count: totalApplied + totalReview, dot: 'bg-slate-400', text: 'text-slate-300' },
-    { label: 'Interview', count: totalInterview, dot: 'bg-purple-400', text: 'text-purple-400' },
-    { label: 'Vetting', count: totalVetting, dot: 'bg-amber-400', text: 'text-amber-400' },
-    { label: 'Contract', count: totalContract, dot: 'bg-emerald-400', text: 'text-emerald-400' },
-    { label: 'Hired', count: totalHired, dot: 'bg-indigo-400', text: 'text-indigo-300' }
+    { label: 'New', count: totalApplied + totalReview, dot: 'bg-slate-400', text: 'text-slate-600 dark:text-slate-300' },
+    { label: 'Interview', count: totalInterview, dot: 'bg-purple-400', text: 'text-purple-600 dark:text-purple-400' },
+    { label: 'Vetting', count: totalVetting, dot: 'bg-amber-400', text: 'text-amber-600 dark:text-amber-400' },
+    { label: 'Contract', count: totalContract, dot: 'bg-emerald-400', text: 'text-emerald-600 dark:text-emerald-400' },
+    { label: 'Hired', count: totalHired, dot: 'bg-indigo-400', text: 'text-indigo-600 dark:text-indigo-300' }
   ];
 
   return (

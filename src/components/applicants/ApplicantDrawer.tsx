@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { useRecruitment } from '../../context/RecruitmentContext';
 import { 
   X, 
@@ -94,7 +94,7 @@ export const ApplicantDrawer: React.FC = () => {
                 </h2>
                 <div className="text-xs text-secondary flex items-center gap-2">
                   <span>{applicant.appliedJobTitle}</span>
-                  <span>â€¢</span>
+                  <span>•</span>
                   <span className="font-mono text-primary">SIA: {applicant.siaLicenceNo} ({applicant.siaLicenceSector})</span>
                 </div>
               </div>
@@ -102,7 +102,7 @@ export const ApplicantDrawer: React.FC = () => {
 
             <button
               onClick={() => setSelectedApplicant(null)}
-              className="text-secondary hover:text-white p-2 rounded-xl bg-panel border border-line transition-colors"
+              className="text-secondary hover:text-primary p-2 rounded-xl bg-panel border border-line transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
@@ -145,7 +145,7 @@ export const ApplicantDrawer: React.FC = () => {
               onClick={() => setActiveTab('vetting')}
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors flex items-center gap-2 ${
                 activeTab === 'vetting'
-                  ? 'bg-panel-2 text-white border border-line-strong'
+                  ? 'bg-panel-2 text-primary border border-line-strong'
                   : 'text-secondary hover:text-primary'
               }`}
             >
@@ -156,7 +156,7 @@ export const ApplicantDrawer: React.FC = () => {
               onClick={() => setActiveTab('personal')}
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors flex items-center gap-2 ${
                 activeTab === 'personal'
-                  ? 'bg-panel-2 text-white border border-line-strong'
+                  ? 'bg-panel-2 text-primary border border-line-strong'
                   : 'text-secondary hover:text-primary'
               }`}
             >
@@ -167,7 +167,7 @@ export const ApplicantDrawer: React.FC = () => {
               onClick={() => setActiveTab('interview')}
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors flex items-center gap-2 ${
                 activeTab === 'interview'
-                  ? 'bg-panel-2 text-white border border-line-strong'
+                  ? 'bg-panel-2 text-primary border border-line-strong'
                   : 'text-secondary hover:text-primary'
               }`}
             >
@@ -189,7 +189,7 @@ export const ApplicantDrawer: React.FC = () => {
                 <div className="p-4 rounded-xl bg-emerald-950/40 border border-emerald-500/50 flex items-center justify-between text-xs glow-emerald">
                   <div className="flex items-center gap-3">
                     <div className="w-9 h-9 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-base">
-                      âœ“
+                      —
                     </div>
                     <div>
                       <div className="font-bold text-emerald-300 text-sm">All Required Vetting Checks Approved!</div>
@@ -418,7 +418,7 @@ export const ApplicantDrawer: React.FC = () => {
                         <div>
                           <div className="font-medium text-primary">{doc.name}</div>
                           <div className="text-[11px] text-tertiary">
-                            Uploaded {doc.uploadedAt} â€¢ {doc.size}
+                            Uploaded {doc.uploadedAt} • {doc.size}
                           </div>
                         </div>
                       </div>

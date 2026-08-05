@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { useRecruitment } from '../../context/RecruitmentContext';
 import { X, Briefcase } from 'lucide-react';
 import type { Job } from '../../types/recruitment';
@@ -58,7 +58,7 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({ isOpen, onClose 
             </div>
           </div>
 
-          <button onClick={onClose} className="text-secondary hover:text-white p-1 rounded-lg">
+          <button onClick={onClose} className="text-secondary hover:text-primary p-1 rounded-lg">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -70,7 +70,7 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({ isOpen, onClose 
             <input
               type="text"
               required
-              placeholder="e.g. SIA Door Supervisor â€” Soho Venue"
+              placeholder="e.g. SIA Door Supervisor — Soho Venue"
               value={title}
               onChange={e => setTitle(e.target.value)}
               className="w-full linear-input rounded-xl p-3"
@@ -108,7 +108,7 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({ isOpen, onClose 
 
           <div className="grid grid-cols-3 gap-4">
             <div>
-              <label className="block text-primary font-medium mb-1">Pay Rate (Â£/hr)</label>
+              <label className="block text-primary font-medium mb-1">Pay Rate (£/hr)</label>
               <input
                 type="number"
                 step="0.10"
