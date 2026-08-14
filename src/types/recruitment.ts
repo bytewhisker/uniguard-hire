@@ -157,4 +157,7 @@ export type ActivePage =
   | 'reports'
   | 'settings'
   | 'user-dashboard'
-  | 'apply';
+  | 'apply'
+  | 'confirm'
+  | 'forgot-password'
+  | 'reset-password';

@@ -23,6 +23,9 @@ import { MultiStepApplyForm } from './components/public/MultiStepApplyForm';
 import { HowItWorksPanel } from './components/common/HowItWorksPanel';
 import { LiveChatWidget } from './components/common/LiveChatWidget';
 import { AdminLogin } from './components/admin/AdminLogin';
+import { ConfirmEmailPage } from './components/public/ConfirmEmailPage';
+import { ForgotPasswordPage } from './components/public/ForgotPasswordPage';
+import { ResetPasswordPage } from './components/public/ResetPasswordPage';
 import { LockKeyhole, ArrowRight } from 'lucide-react';
 
 const AuthRequired: React.FC = () => {
@@ -68,7 +71,7 @@ const MainLayout: React.FC = () => {
   const [isGuideOpen, setIsGuideOpen] = useState(false);
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
 
-  const publicPages = ['landing', 'login', 'signup', 'user-dashboard', 'apply'];
+  const publicPages = ['landing', 'login', 'signup', 'user-dashboard', 'apply', 'confirm', 'forgot-password', 'reset-password'];
   const isPublicPage = publicPages.includes(activePage);
   
   // Redirect to admin login if trying to view admin panels while not logged in
@@ -90,6 +93,9 @@ const MainLayout: React.FC = () => {
     if (activePage === 'signup') page = <SignupPage />;
     if (activePage === 'user-dashboard') page = <UserDashboard />;
     if (activePage === 'apply') page = <MultiStepApplyForm />;
+    if (activePage === 'confirm') page = <ConfirmEmailPage />;
+    if (activePage === 'forgot-password') page = <ForgotPasswordPage />;
+    if (activePage === 'reset-password') page = <ResetPasswordPage />;
     return (
       <>
         {page}

@@ -103,6 +103,7 @@ interface RecruitmentContextType {
   publicLogin: (email: string, password: string) => Promise<boolean>;
   publicSignup: (name: string, email: string, password: string) => Promise<{ ok: boolean; needsConfirm: boolean }>;
   googleLogin: () => Promise<boolean>;
+  requestPasswordReset: (email: string) => Promise<boolean>;
   publicLogout: () => void;
 
   }
@@ -115,6 +116,9 @@ const PAGE_PATHS: Record<string, string> = {
   signup: '/signup',
   'user-dashboard': '/dashboard',
   apply: '/apply',
+  confirm: '/confirm',
+  'forgot-password': '/forgot-password',
+  'reset-password': '/reset-password',
 };
 
 const PATH_PAGES: Record<string, string> = {
@@ -123,6 +127,9 @@ const PATH_PAGES: Record<string, string> = {
   '/signup': 'signup',
   '/dashboard': 'user-dashboard',
   '/apply': 'apply',
+  '/confirm': 'confirm',
+  '/forgot-password': 'forgot-password',
+  '/reset-password': 'reset-password',
   '/admin': 'dashboard',
 };
 
@@ -581,7 +588,12 @@ export const RecruitmentProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
     const { data: { subscription } } = client.auth.onAuthStateChange((event, session) => {
       applySessionUser(session?.user ?? null);
-      if (event === 'SIGNED_IN' && session?.user) setActivePage('user-dashboard');
+      // Fresh sign-in → dashboard, unless we're mid-email-confirmation or
+      // mid-password-reset, where the session is only the OTP session.
+      if (event === 'SIGNED_IN' && session?.user) {
+        const path = window.location.pathname;
+        if (path !== '/confirm' && path !== '/reset-password') setActivePage('user-dashboard');
+      }
     });
 
     return () => subscription.unsubscribe();
@@ -643,6 +655,22 @@ export const RecruitmentProvider: React.FC<{ children: React.ReactNode }> = ({ c
     });
     if (error) {
       showToast('Google Sign-In Failed', error.message, 'error');
+      return false;
+    }
+    return true;
+  };
+
+  // Forgot password: sends a recovery email with a link to /reset-password
+  const requestPasswordReset = async (email: string): Promise<boolean> => {
+    if (!supabase) {
+      showToast('Reset Failed', 'Backend is not configured — set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.', 'error');
+      return false;
+    }
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    if (error) {
+      showToast('Reset Failed', error.message, 'error');
       return false;
     }
     return true;
@@ -1006,6 +1034,7 @@ export const RecruitmentProvider: React.FC<{ children: React.ReactNode }> = ({ c
       publicLogin,
       publicSignup,
       googleLogin,
+      requestPasswordReset,
       publicLogout
     }}>
       {children}
