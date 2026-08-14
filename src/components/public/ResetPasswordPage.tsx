@@ -16,26 +16,58 @@ export const ResetPasswordPage: React.FC = () => {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const tokenHash = params.get('token_hash');
-    const type = params.get('type');
-
-    if (!supabase || !tokenHash || type !== 'recovery') {
+    if (!supabase) {
       setStatus('error');
-      setMessage('This reset link is invalid or has expired. Please request a new one.');
+      setMessage('Backend is not configured — set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.');
       return;
     }
 
-    supabase.auth
-      .verifyOtp({ token_hash: tokenHash, type: 'recovery' })
-      .then(({ error: otpError }) => {
-        if (otpError) {
-          setStatus('error');
-          setMessage(otpError.message || 'This reset link is invalid or has expired. Please request a new one.');
-          return;
-        }
-        setStatus('ready');
-      });
+    const params = new URLSearchParams(window.location.search);
+    const tokenHash = params.get('token_hash');
+    const code = params.get('code');
+    const type = params.get('type');
+
+    let cancelled = false;
+    const fail = (msg: string) => {
+      if (cancelled) return;
+      setStatus('error');
+      setMessage(msg);
+    };
+    const succeed = () => {
+      if (!cancelled) setStatus('ready');
+    };
+
+    // Format 1: token_hash links (classic email template)
+    if (tokenHash && type) {
+      supabase.auth.verifyOtp({ token_hash: tokenHash, type: type as 'email' | 'recovery' | 'sms' | 'phone' | 'invite' | 'email_change' | 'email_signup' })
+        .then(({ error }) => error ? fail(error.message) : succeed());
+      return () => { cancelled = true; };
+    }
+
+    // Format 2: ?code= links (modern PKCE email links)
+    if (code) {
+      supabase.auth.exchangeCodeForSession(code)
+        .then(({ error }) => error ? fail(error.message) : succeed());
+      return () => { cancelled = true; };
+    }
+
+    // Format 3: #access_token=… in the URL hash — supabase-js auto-initialises
+    // the recovery session on page load, so wait for it to appear.
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session) succeed();
+    });
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) succeed();
+    });
+    const timeout = window.setTimeout(() => {
+      subscription.unsubscribe();
+      fail('This reset link is invalid or has expired. Please request a new one.');
+    }, 10000);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timeout);
+      subscription.unsubscribe();
+    };
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
