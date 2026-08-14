@@ -5,6 +5,10 @@ import { Shield, MailCheck, Loader2, AlertTriangle, ArrowRight } from 'lucide-re
 
 type Status = 'verifying' | 'success' | 'error';
 
+// Tokens already used on this page load (StrictMode double-mount, back-button
+// re-entry) must never be verified a second time — they are single-use.
+const usedTokens = new Set<string>();
+
 export const ConfirmEmailPage: React.FC = () => {
   const { setActivePage } = useRecruitment();
   const [status, setStatus] = useState<Status>('verifying');
@@ -19,50 +23,72 @@ export const ConfirmEmailPage: React.FC = () => {
 
     const params = new URLSearchParams(window.location.search);
     const tokenHash = params.get('token_hash');
-    const code = params.get('code');
     const type = params.get('type');
 
     let cancelled = false;
+    let subscription: { unsubscribe: () => void } | null = null;
+    let timeout = 0;
+    const cleanup = () => {
+      subscription?.unsubscribe();
+      if (timeout) window.clearTimeout(timeout);
+    };
     const fail = (msg: string) => {
       if (cancelled) return;
+      cleanup();
       setStatus('error');
       setMessage(msg);
     };
     const succeed = () => {
-      if (!cancelled) setStatus('success');
+      if (cancelled) return;
+      cleanup();
+      setStatus('success');
     };
+
+    // Confirmation link carries a one-time token. Verify it, but only if a
+    // session isn't already established — supabase-js auto-exchanges ?code=
+    // links on page load, and verifying/exchanging the same token twice always
+    // fails.
+    const withExistingSession = () =>
+      supabase!.auth.getSession().then(({ data: { session } }) => {
+        if (session) {
+          succeed();
+          return true;
+        }
+        return false;
+      });
 
     // Format 1: token_hash links (classic email template)
     if (tokenHash && type) {
-      supabase.auth.verifyOtp({ token_hash: tokenHash, type: type as 'email' | 'recovery' | 'sms' | 'phone' | 'invite' | 'email_change' | 'email_signup' })
-        .then(({ error }) => error ? fail(error.message) : succeed());
-      return () => { cancelled = true; };
+      withExistingSession().then((hasSession) => {
+        if (hasSession || cancelled) return;
+        if (usedTokens.has(tokenHash)) {
+          fail('This confirmation link has already been used. Please request a new one.');
+          return;
+        }
+        usedTokens.add(tokenHash);
+        supabase!.auth.verifyOtp({ token_hash: tokenHash, type: type as 'email' | 'recovery' | 'sms' | 'phone' | 'invite' | 'email_change' | 'email_signup' })
+          .then(({ error }) => error ? fail(error.message) : succeed());
+      });
+      return cleanup;
     }
 
-    // Format 2: ?code= links (modern PKCE email links)
-    if (code) {
-      supabase.auth.exchangeCodeForSession(code)
-        .then(({ error }) => error ? fail(error.message) : succeed());
-      return () => { cancelled = true; };
-    }
-
-    // Format 3: #access_token=… in the URL hash — supabase-js auto-initialises
-    // the session on page load, so wait for it to appear.
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session) succeed();
+    // Format 2+3: ?code= (PKCE) or #access_token=… (implicit) links are
+    // auto-initialised by supabase-js itself on page load — just wait for the
+    // session. Never exchange the code manually here: it races the client's
+    // own auto-exchange and double-uses a single-use code.
+    withExistingSession().then((hasSession) => {
+      if (hasSession || cancelled) return;
+      subscription = supabase!.auth.onAuthStateChange((_event, session) => {
+        if (session) succeed();
+      }).data.subscription;
+      supabase!.auth.getSession().then(({ data: { session } }) => {
+        if (session) succeed();
+      });
+      timeout = window.setTimeout(() => {
+        fail('This confirmation link is invalid or has expired. Please request a new one.');
+      }, 15000);
     });
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) succeed();
-    });
-    const timeout = window.setTimeout(() => {
-      subscription.unsubscribe();
-      fail('This confirmation link is invalid or has expired. Please request a new one.');
-    }, 10000);
-    return () => {
-      cancelled = true;
-      window.clearTimeout(timeout);
-      subscription.unsubscribe();
-    };
+    return cleanup;
   }, []);
 
   return (
