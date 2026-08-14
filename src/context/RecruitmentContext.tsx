@@ -622,7 +622,12 @@ export const RecruitmentProvider: React.FC<{ children: React.ReactNode }> = ({ c
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: { full_name: name } },
+      options: {
+        data: { full_name: name },
+        // Confirmation links must return to this app (not Supabase's Site URL),
+        // so they work on both the live site and localhost.
+        emailRedirectTo: window.location.origin,
+      },
     });
     if (error) {
       showToast('Signup Failed', 'That email is already registered.', 'error');
