@@ -443,6 +443,18 @@ exception when duplicate_object then
 end $$;
 
 -- ---------------------------------------------------------------------------
+-- 7b. STORAGE SCHEMA SYNC — fixes "The database schema is out of sync" upload
+-- errors. The storage API now writes owner_id / version / user_metadata on
+-- every upload; projects created before storage migrations 0016/0018/0025
+-- are missing these columns. Idempotent.
+-- ---------------------------------------------------------------------------
+alter table storage.objects add column if not exists version text default null;
+alter table storage.objects add column if not exists owner_id text default null;
+alter table storage.objects add column if not exists user_metadata jsonb null;
+alter table storage.buckets add column if not exists owner_id text default null;
+alter table storage.buckets drop constraint if exists buckets_owner_fkey;
+
+-- ---------------------------------------------------------------------------
 -- 8. LEGACY-DATA AUDIT + SAFE BACKFILL (read this section before running)
 --    Existing applications have user_id = NULL. Until linked, they are
 --    visible to ADMINS ONLY (no candidate sees them — by design).
