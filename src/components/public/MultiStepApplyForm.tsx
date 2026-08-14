@@ -152,6 +152,9 @@ export const MultiStepApplyForm: React.FC = () => {
     setSubmitError('');
     setSubmitting(true);
     try {
+      if (!supabase) {
+        throw new Error('Backend is not configured — set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in your deployment.');
+      }
       const { data: { user } } = await supabase.auth.getUser();
       let storedActivities = activities.map(a => ({ ...a, file: undefined }));
 

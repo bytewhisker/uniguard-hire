@@ -265,6 +265,7 @@ export const RecruitmentProvider: React.FC<{ children: React.ReactNode }> = ({ c
   // Full refetch of every table — recovery for missed realtime events and
   // the authoritative load whenever the auth session changes.
   const syncAll = React.useCallback(async () => {
+    if (!supabase) return;
     try {
       const [apps, msgs, ivs] = await Promise.all([
         supabase.from('applications').select('*').order('created_at', { ascending: false }),
@@ -293,13 +294,15 @@ export const RecruitmentProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const authKey = `${publicUser?.email ?? ''}|${isAuthenticated}`;
   useEffect(() => {
     let disposed = false;
+    const client = supabase;
+    if (!client) return;
     const fetchAll = () => { if (!disposed) syncAll(); };
 
     fetchAll();
 
     // Live: new applications appear instantly without refreshing
     const channels = [
-      supabase
+      client
         .channel('applications-live')
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'applications' }, (payload) => {
           const app = supabaseRowToApplicant(payload.new as any);
@@ -325,7 +328,7 @@ export const RecruitmentProvider: React.FC<{ children: React.ReactNode }> = ({ c
         .subscribe(),
 
       // Live: chat messages
-      supabase
+      client
         .channel('messages-live')
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, (payload) => {
           const m = payload.new as any;
@@ -342,7 +345,7 @@ export const RecruitmentProvider: React.FC<{ children: React.ReactNode }> = ({ c
         .subscribe(),
 
       // Live: interviews
-      supabase
+      client
         .channel('interviews-live')
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'interviews' }, (payload) => {
           const row = payload.new as any;
@@ -366,7 +369,7 @@ export const RecruitmentProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
     return () => {
       disposed = true;
-      channels.forEach(c => supabase.removeChannel(c));
+      channels.forEach(c => client.removeChannel(c));
       window.clearInterval(interval);
       document.removeEventListener('visibilitychange', onVisible);
       window.removeEventListener('online', onOnline);
@@ -375,6 +378,7 @@ export const RecruitmentProvider: React.FC<{ children: React.ReactNode }> = ({ c
   }, [authKey]);
 
   const reloadMessages = async () => {
+    if (!supabase) return;
     try {
       const { data } = await supabase.from('messages').select('*').order('created_at', { ascending: true });
       if (data) mergeMessages(data.map(supabaseRowToMessage));
@@ -403,7 +407,7 @@ export const RecruitmentProvider: React.FC<{ children: React.ReactNode }> = ({ c
       readByUser: sender === 'user',
     };
     setMessages(prev => [...prev, local]);
-    if (isDbRow) {
+    if (isDbRow && supabase) {
       supabase.from('messages').insert({
         application_id: applicationId,
         sender,
@@ -431,7 +435,7 @@ export const RecruitmentProvider: React.FC<{ children: React.ReactNode }> = ({ c
     if (!trimmed) return;
     const now = new Date().toISOString();
     setMessages(prev => prev.map(m => m.id === messageId ? { ...m, body: trimmed, editedAt: now } : m));
-    if (!messageId.startsWith('local-')) {
+    if (!messageId.startsWith('local-') && supabase) {
       supabase.from('messages').update({ body: trimmed, edited_at: now }).eq('id', messageId).then(({ error }) => {
         if (error) console.error('Message edit failed:', error.message);
       });
@@ -440,7 +444,7 @@ export const RecruitmentProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
   const deleteMessage = (messageId: string) => {
     setMessages(prev => prev.filter(m => m.id !== messageId));
-    if (!messageId.startsWith('local-')) {
+    if (!messageId.startsWith('local-') && supabase) {
       supabase.from('messages').delete().eq('id', messageId).then(({ error }) => {
         if (error) console.error('Message delete failed:', error.message);
       });
@@ -454,7 +458,7 @@ export const RecruitmentProvider: React.FC<{ children: React.ReactNode }> = ({ c
     setMessages(prev => prev.map(m => asAdmin
       ? (m.applicationId === applicationId && m.sender === 'user' ? { ...m, readByAdmin: true } : m)
       : (m.applicationId === applicationId && m.sender === 'admin' ? { ...m, readByUser: true } : m)));
-    if (ids.length > 0) {
+    if (ids.length > 0 && supabase) {
       supabase.from('messages').update(asAdmin ? { read_by_admin: true } : { read_by_user: true }).in('id', ids).then(({ error }) => {
         if (error) console.error('Mark read failed:', error.message);
       });
@@ -473,7 +477,7 @@ export const RecruitmentProvider: React.FC<{ children: React.ReactNode }> = ({ c
     const upsert = (iv: ScheduledInterview) => {
       setInterviews(prev => [...prev.filter(x => x.applicationId !== applicantId), iv]);
     };
-    if (isDbRow) {
+    if (isDbRow && supabase) {
       supabase.from('interviews').insert({
         application_id: applicantId,
         scheduled_at: scheduledAt,
@@ -515,17 +519,18 @@ export const RecruitmentProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
   const completeInterviewLive = (interviewId: string) => {
     setInterviews(prev => prev.map(i => i.id === interviewId ? { ...i, completed: true, status: 'completed' } : i));
-    if (!interviewId.startsWith('local-')) {
+    if (!interviewId.startsWith('local-') && supabase) {
       supabase.from('interviews').update({ completed: true, status: 'completed' }).eq('id', interviewId).then(() => {});
     }
   };
 
   // Keep Supabase status in sync with admin pipeline stage changes
   useEffect(() => {
-    if (supabaseIdsRef.current.size === 0) return;
+    if (supabaseIdsRef.current.size === 0 || !supabase) return;
+    const client = supabase;
     applicants.forEach(a => {
       if (supabaseIdsRef.current.has(a.id)) {
-        supabase.from('applications').update({ status: a.currentStage }).eq('id', a.id).then(() => {});
+        client.from('applications').update({ status: a.currentStage }).eq('id', a.id).then(() => {});
       }
     });
   }, [applicants]);
@@ -553,6 +558,8 @@ export const RecruitmentProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
   // Restore Supabase session → candidate (publicUser) and admin state
   useEffect(() => {
+    const client = supabase;
+    if (!client) return;
     const applySessionUser = async (supabaseUser: { id: string; email?: string; user_metadata?: Record<string, unknown> } | null) => {
       if (!supabaseUser) {
         setPublicUser(null);
@@ -563,15 +570,15 @@ export const RecruitmentProvider: React.FC<{ children: React.ReactNode }> = ({ c
         name: (supabaseUser.user_metadata?.full_name as string) || supabaseUser.email || '',
         email: supabaseUser.email || '',
       });
-      const { data: profile } = await supabase.from('profiles').select('is_admin').eq('id', supabaseUser.id).maybeSingle();
+      const { data: profile } = await client.from('profiles').select('is_admin').eq('id', supabaseUser.id).maybeSingle();
       setIsAuthenticated(!!profile?.is_admin);
     };
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    client.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) applySessionUser(session.user);
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = client.auth.onAuthStateChange((_event, session) => {
       applySessionUser(session?.user ?? null);
     });
 
@@ -580,6 +587,10 @@ export const RecruitmentProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
   // Public user auth (Supabase Auth)
   const publicLogin = async (email: string, password: string): Promise<boolean> => {
+    if (!supabase) {
+      showToast('Login Failed', 'Backend is not configured — set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.', 'error');
+      return false;
+    }
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
       showToast('Login Failed', 'Invalid email or password.', 'error');
@@ -590,6 +601,10 @@ export const RecruitmentProvider: React.FC<{ children: React.ReactNode }> = ({ c
   };
 
   const publicSignup = async (name: string, email: string, password: string): Promise<{ ok: boolean; needsConfirm: boolean }> => {
+    if (!supabase) {
+      showToast('Signup Failed', 'Backend is not configured — set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.', 'error');
+      return { ok: false, needsConfirm: false };
+    }
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -612,7 +627,7 @@ export const RecruitmentProvider: React.FC<{ children: React.ReactNode }> = ({ c
   };
 
   const publicLogout = () => {
-    supabase.auth.signOut();
+    supabase?.auth.signOut();
     setPublicUser(null);
     setActivePage('landing');
     showToast('Logged Out', 'You have been logged out.', 'info');
@@ -620,6 +635,10 @@ export const RecruitmentProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
   // Admin auth: a signed-in Supabase user flagged is_admin = true in public.profiles
   const login = async (email: string, password: string): Promise<boolean> => {
+    if (!supabase) {
+      showToast('Login Failed', 'Backend is not configured — set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.', 'error');
+      return false;
+    }
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error || !data.user) {
       showToast('Login Failed', 'Invalid email or password.', 'error');
@@ -638,7 +657,7 @@ export const RecruitmentProvider: React.FC<{ children: React.ReactNode }> = ({ c
   };
 
   const logout = () => {
-    supabase.auth.signOut();
+    supabase?.auth.signOut();
     setIsAuthenticated(false);
     setActivePage('dashboard');
     showToast('Logged Out', 'You have logged out of the recruitment admin portal.', 'info');
