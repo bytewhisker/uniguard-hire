@@ -69,6 +69,7 @@ interface RecruitmentContextType {
   sendContract: (applicantId: string) => void;
   convertToEmployee: (applicantId: string) => void;
   createJob: (jobData: Omit<Job, 'id' | 'createdDate' | 'applicantsCount'>) => Promise<void>;
+  deleteJob: (id: string) => Promise<void>;
   addApplicant: (applicantData: Partial<Applicant>) => void;
 
   // Chat
@@ -1037,6 +1038,27 @@ export const RecruitmentProvider: React.FC<{ children: React.ReactNode }> = ({ c
     }
   };
 
+  // 7b. Delete Job (removes it from Supabase — every dashboard updates live)
+  const deleteJob = async (id: string) => {
+    const job = jobs.find(j => j.id === id);
+    setJobs(prev => prev.filter(j => j.id !== id));
+    if (!job) return;
+
+    if (id.startsWith('job-') || !supabase) {
+      showToast('Job Deleted', `"${job.title}" removed.`, 'success');
+      return;
+    }
+
+    const { error } = await supabase.from('jobs').delete().eq('id', id);
+    if (error) {
+      console.error('Job delete failed:', error.message);
+      setJobs(prev => prev.some(j => j.id === id) ? prev : [job, ...prev]);
+      showToast('Delete Failed', 'Could not remove the job from the server.', 'error');
+      return;
+    }
+    showToast('Job Deleted', `"${job.title}" removed from all dashboards.`, 'success');
+  };
+
   // 8. Add Applicant
   const addApplicant = (applicantData: Partial<Applicant>) => {
     const newId = `app-${Date.now()}`;
@@ -1100,6 +1122,7 @@ export const RecruitmentProvider: React.FC<{ children: React.ReactNode }> = ({ c
       sendContract,
       convertToEmployee,
       createJob,
+      deleteJob,
       addApplicant,
       sendMessage,
       editMessage,

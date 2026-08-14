@@ -1,13 +1,13 @@
 ﻿import React from 'react';
 import { useRecruitment } from '../../context/RecruitmentContext';
-import { Briefcase, MapPin, PoundSterling, Users, ShieldCheck, Plus } from 'lucide-react';
+import { Briefcase, MapPin, PoundSterling, Users, ShieldCheck, Plus, Trash2 } from 'lucide-react';
 
 interface JobsViewProps {
   onOpenCreateJob: () => void;
 }
 
 export const JobsView: React.FC<JobsViewProps> = ({ onOpenCreateJob }) => {
-  const { jobs, applicants, setActivePage, setSelectedStageFilter } = useRecruitment();
+  const { jobs, applicants, setActivePage, setSelectedStageFilter, deleteJob } = useRecruitment();
 
   return (
     <div className="p-8 space-y-6 max-w-7xl mx-auto">
@@ -58,6 +58,18 @@ export const JobsView: React.FC<JobsViewProps> = ({ onOpenCreateJob }) => {
                   }`}>
                     {job.status.toUpperCase()}
                   </span>
+
+                  <button
+                    onClick={() => {
+                      if (window.confirm(`Delete "${job.title}"? This removes it from every candidate dashboard immediately.`)) {
+                        deleteJob(job.id);
+                      }
+                    }}
+                    title="Delete job"
+                    className="p-1.5 rounded-lg text-tertiary hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
                 </div>
 
                 <p className="text-xs text-secondary leading-relaxed line-clamp-2">
