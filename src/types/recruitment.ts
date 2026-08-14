@@ -122,13 +122,39 @@ export interface ActivityLog {
   user: string;
 }
 
+export interface ChatMessage {
+  id: string;
+  applicationId: string;
+  sender: 'admin' | 'user';
+  body: string;
+  editedAt?: string;
+  createdAt: string;
+  readByAdmin: boolean;
+  readByUser: boolean;
+}
+
+export interface ScheduledInterview {
+  id: string;
+  applicationId: string;
+  scheduledAt: string; // ISO
+  durationMinutes: number;
+  location: string;
+  notes?: string;
+  status: 'scheduled' | 'completed' | 'cancelled';
+  completed: boolean;
+}
+
 export type ActivePage = 
   | 'landing'
   | 'login'
+  | 'signup'
   | 'dashboard'
   | 'jobs'
   | 'applicants'
   | 'interviews'
   | 'employees'
+  | 'chat'
   | 'reports'
-  | 'settings';
+  | 'settings'
+  | 'user-dashboard'
+  | 'apply';

@@ -87,7 +87,7 @@ export const InterviewCalendarView: React.FC = () => {
                 </div>
 
                 <div className="text-secondary flex items-center gap-1.5 text-[11px] truncate">
-                  {interview.interviewType === 'video' ? <Video className="w-3.5 h-3.5 text-blue-400" /> : <MapPin className="w-3.5 h-3.5 text-emerald-400" />}
+                  {interview.interviewType === 'video' ? <Video className="w-3.5 h-3.5 text-blue-500" /> : <MapPin className="w-3.5 h-3.5 text-[#AF7C28]" />}
                   <span>{interview.locationOrLink}</span>
                 </div>
               </div>
@@ -142,7 +142,7 @@ export const InterviewCalendarView: React.FC = () => {
                   <div className="grid grid-cols-2 gap-2">
                     <button
                       onClick={() => handleComplete(applicant.id, true)}
-                      className="py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-bold text-xs transition-colors"
+                      className="py-1.5 rounded-lg bg-[#AF7C28] hover:bg-[#c99a3e] text-white font-bold text-xs transition-colors"
                     >
                       Pass & Start Vetting
                     </button>

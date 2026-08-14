@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useRecruitment } from '../../context/RecruitmentContext';
-import { Search, User, Briefcase, CheckSquare, ShieldCheck, X } from 'lucide-react';
+import { Search, User, Briefcase, CheckSquare, ShieldCheck, X, MessageSquare } from 'lucide-react';
 import type { ActivePage } from '../../types/recruitment';
 
 export const CommandPalette: React.FC = () => {
@@ -54,7 +54,7 @@ export const CommandPalette: React.FC = () => {
       <div className="bg-panel border border-line-strong rounded-2xl max-w-2xl w-full shadow-2xl overflow-hidden flex flex-col">
         {/* Search Header */}
         <div className="flex items-center px-4 py-3.5 border-b border-line gap-3">
-          <Search className="w-5 h-5 text-emerald-400 shrink-0" />
+          <Search className="w-5 h-5 text-[#AF7C28] shrink-0" />
           <input
             type="text"
             placeholder="Type a candidate name, SIA licence #, job title, or command..."
@@ -84,7 +84,7 @@ export const CommandPalette: React.FC = () => {
                   onClick={() => navigateToPage('dashboard')}
                   className="flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-panel-2-dim text-primary text-left transition-colors"
                 >
-                  <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                  <ShieldCheck className="w-4 h-4 text-[#AF7C28]" />
                   <span>Dashboard Overview</span>
                 </button>
                 <button
@@ -105,8 +105,15 @@ export const CommandPalette: React.FC = () => {
                   onClick={() => navigateToPage('employees')}
                   className="flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-panel-2-dim text-primary text-left transition-colors"
                 >
-                  <CheckSquare className="w-4 h-4 text-emerald-400" />
+                  <CheckSquare className="w-4 h-4 text-[#AF7C28]" />
                   <span>Hired Employees</span>
+                </button>
+                <button
+                  onClick={() => navigateToPage('chat')}
+                  className="flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-panel-2-dim text-primary text-left transition-colors"
+                >
+                  <MessageSquare className="w-4 h-4 text-teal-400" />
+                  <span>Candidate Chat</span>
                 </button>
               </div>
             </div>

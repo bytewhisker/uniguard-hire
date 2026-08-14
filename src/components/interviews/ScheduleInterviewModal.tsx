@@ -74,7 +74,7 @@ export const ScheduleInterviewModal: React.FC<ScheduleInterviewModalProps> = ({
             </select>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-primary font-medium mb-1">Interview Date *</label>
               <input
@@ -97,7 +97,7 @@ export const ScheduleInterviewModal: React.FC<ScheduleInterviewModalProps> = ({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-primary font-medium mb-1">Interview Format</label>
               <select

@@ -25,7 +25,7 @@ export const JobsView: React.FC<JobsViewProps> = ({ onOpenCreateJob }) => {
 
         <button
           onClick={onOpenCreateJob}
-          className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-bold text-xs flex items-center gap-2 transition-all active:scale-95 shadow-md shadow-emerald-950/40"
+          className="px-4 py-2 rounded-xl bg-[#AF7C28] hover:bg-[#c99a3e] text-white font-bold text-xs flex items-center gap-2 transition-all active:scale-95 shadow-md shadow-amber-500/25"
         >
           <Plus className="w-4 h-4 stroke-[2.5]" />
           <span>Create New Job</span>
@@ -46,7 +46,7 @@ export const JobsView: React.FC<JobsViewProps> = ({ onOpenCreateJob }) => {
                     <span className="text-[10px] font-semibold uppercase tracking-wider text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded border border-blue-500/20">
                       {job.department}
                     </span>
-                    <h3 className="text-base font-bold text-primary group-hover:text-emerald-400 transition-colors mt-1.5">
+                    <h3 className="text-base font-bold text-primary group-hover:text-[#AF7C28] transition-colors mt-1.5">
                       {job.title}
                     </h3>
                   </div>
@@ -70,8 +70,8 @@ export const JobsView: React.FC<JobsViewProps> = ({ onOpenCreateJob }) => {
                     <MapPin className="w-3.5 h-3.5 text-tertiary shrink-0" />
                     <span className="truncate">{job.location}</span>
                   </div>
-                  <div className="flex items-center gap-1.5 text-emerald-400 font-mono font-bold">
-                    <PoundSterling className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                  <div className="flex items-center gap-1.5 text-[#AF7C28] font-mono font-bold">
+                    <PoundSterling className="w-3.5 h-3.5 text-[#AF7C28] shrink-0" />
                     <span>Â£{job.payRate.toFixed(2)}/hr</span>
                   </div>
                   <div className="flex items-center gap-1.5 text-primary">

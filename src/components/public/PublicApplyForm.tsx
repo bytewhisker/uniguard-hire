@@ -69,28 +69,28 @@ export const PublicApplyForm: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100 py-10 px-4 flex flex-col items-center justify-center relative overflow-hidden">
+    <div className="min-h-screen bg-page text-primary py-10 px-4 flex flex-col items-center justify-center relative overflow-hidden">
       
       {/* Top Banner Navigation back to Admin */}
-      <div className="w-full max-w-3xl flex items-center justify-between mb-8 pb-4 border-b border-zinc-800">
+      <div className="w-full max-w-3xl flex items-center justify-between mb-8 pb-4 border-b border-line">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-400 flex items-center justify-center text-zinc-950 shadow-lg shadow-emerald-950/50">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-400 flex items-center justify-center text-zinc-950 shadow-lg shadow-emerald-500/25">
             <ShieldCheck className="w-6 h-6 stroke-[2.5]" />
           </div>
           <div>
-            <h1 className="font-bold text-base text-zinc-100 flex items-center gap-2">
+            <h1 className="font-bold text-base text-primary flex items-center gap-2">
               Uniguard Security UK
-              <span className="text-[10px] font-mono px-2 py-0.2 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+              <span className="text-[10px] font-mono px-2 py-0.2 rounded bg-emerald-500/10 text-emerald-600 border border-emerald-500/30">
                 Official Careers Portal
               </span>
             </h1>
-            <p className="text-xs text-zinc-400">Online Guard Recruitment & SIA Vetting System</p>
+            <p className="text-xs text-tertiary">Online Guard Recruitment & SIA Vetting System</p>
           </div>
         </div>
 
         <button
           onClick={() => setActivePage('dashboard')}
-          className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 text-xs font-semibold transition-colors"
+          className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-panel-2 hover:bg-panel-3 text-secondary border border-line text-xs font-semibold transition-colors"
         >
           <ChevronLeft className="w-4 h-4" />
           <span>Switch to Admin Dashboard</span>
@@ -100,36 +100,36 @@ export const PublicApplyForm: React.FC = () => {
       {/* Submission Success Screen */}
       {isSubmitted ? (
         <div className="w-full max-w-2xl linear-card p-8 rounded-3xl text-center space-y-6 animate-in zoom-in-95 duration-200 border-emerald-500/50 glow-emerald">
-          <div className="w-16 h-16 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto border border-emerald-500/40 text-2xl">
+          <div className="w-16 h-16 rounded-full bg-emerald-500/20 text-emerald-600 flex items-center justify-center mx-auto border border-emerald-500/40 text-2xl">
             ✓
           </div>
 
           <div className="space-y-2">
-            <h2 className="text-2xl font-extrabold text-zinc-100">Application Submitted Successfully!</h2>
-            <p className="text-sm text-zinc-300 max-w-md mx-auto leading-relaxed">
-              Thank you, <span className="text-emerald-400 font-semibold">{fullName}</span>. Your security guard application for <span className="text-zinc-100 font-medium">"{selectedJob.title}"</span> has been registered into the Uniguard Vetting System.
+            <h2 className="text-2xl font-extrabold text-primary">Application Submitted Successfully!</h2>
+            <p className="text-sm text-secondary max-w-md mx-auto leading-relaxed">
+              Thank you, <span className="text-emerald-600 font-semibold">{fullName}</span>. Your security guard application for <span className="text-primary font-medium">"{selectedJob.title}"</span> has been registered into the Uniguard Vetting System.
             </p>
           </div>
 
-          <div className="p-4 rounded-2xl bg-zinc-900/90 border border-zinc-800 max-w-md mx-auto text-left text-xs space-y-2 font-mono">
-            <div className="flex justify-between text-zinc-400">
+          <div className="p-4 rounded-2xl bg-panel-2 border border-line max-w-md mx-auto text-left text-xs space-y-2 font-mono">
+            <div className="flex justify-between text-tertiary">
               <span>Candidate Reference:</span>
-              <span className="text-emerald-400 font-bold">#UG-APP-2026</span>
+              <span className="text-emerald-600 font-bold">#UG-APP-2026</span>
             </div>
-            <div className="flex justify-between text-zinc-400">
+            <div className="flex justify-between text-tertiary">
               <span>SIA Licence Number:</span>
-              <span className="text-amber-400">{siaLicenceNo}</span>
+              <span className="text-amber-600">{siaLicenceNo}</span>
             </div>
-            <div className="flex justify-between text-zinc-400">
+            <div className="flex justify-between text-tertiary">
               <span>Vetting Status:</span>
-              <span className="text-amber-400">Pending Manual Verification</span>
+              <span className="text-amber-600">Pending Manual Verification</span>
             </div>
           </div>
 
           <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-4">
             <button
               onClick={handleGoToAdmin}
-              className="w-full sm:w-auto px-6 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-emerald-950/50 transition-all active:scale-95"
+              className="w-full sm:w-auto px-6 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/25 transition-all active:scale-95"
             >
               <span>View Submitted Application on Admin Dashboard</span>
               <ArrowRight className="w-4 h-4 stroke-[2.5]" />
@@ -141,7 +141,7 @@ export const PublicApplyForm: React.FC = () => {
                 setEmail('');
                 setSiaLicenceNo('');
               }}
-              className="w-full sm:w-auto px-5 py-3 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-300 text-xs font-semibold transition-colors"
+              className="w-full sm:w-auto px-5 py-3 rounded-xl bg-panel-2 hover:bg-panel-3 text-secondary text-xs font-semibold transition-colors"
             >
               Submit Another Application
             </button>
@@ -153,11 +153,11 @@ export const PublicApplyForm: React.FC = () => {
           
           {/* Vacancy Selector Header */}
           <div className="linear-card p-6 rounded-3xl space-y-4">
-            <div className="flex items-center gap-2 text-xs text-emerald-400 font-semibold">
+            <div className="flex items-center gap-2 text-xs text-emerald-600 font-semibold">
               <Sparkles className="w-4 h-4" />
               <span>Step 1: Choose Security Position</span>
             </div>
-            <h2 className="text-xl font-bold text-zinc-100">Select Job Vacancy</h2>
+            <h2 className="text-xl font-bold text-primary">Select Job Vacancy</h2>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               {jobs.map(job => (
@@ -166,18 +166,18 @@ export const PublicApplyForm: React.FC = () => {
                   onClick={() => setSelectedJobId(job.id)}
                   className={`p-4 rounded-2xl border cursor-pointer transition-all space-y-2 ${
                     selectedJobId === job.id
-                      ? 'bg-emerald-950/30 border-emerald-500/60 ring-1 ring-emerald-500/40'
-                      : 'bg-zinc-900/60 border-zinc-800 hover:border-zinc-700'
+                      ? 'bg-emerald-500/10 border-emerald-500/60 ring-1 ring-emerald-500/40'
+                      : 'bg-panel-2 border-line hover:border-line-strong'
                   }`}
                 >
-                  <div className="font-semibold text-xs text-zinc-100 leading-tight">
+                  <div className="font-semibold text-xs text-primary leading-tight">
                     {job.title}
                   </div>
-                  <div className="text-[11px] text-zinc-400 flex items-center gap-1">
-                    <MapPin className="w-3 h-3 text-zinc-500" />
+                  <div className="text-[11px] text-tertiary flex items-center gap-1">
+                    <MapPin className="w-3 h-3 text-faint" />
                     <span>{job.location}</span>
                   </div>
-                  <div className="text-xs font-mono font-bold text-emerald-400">
+                  <div className="text-xs font-mono font-bold text-emerald-600">
                     £{job.payRate.toFixed(2)}/hr
                   </div>
                 </div>
@@ -187,12 +187,12 @@ export const PublicApplyForm: React.FC = () => {
 
           {/* Candidate Form */}
           <form onSubmit={handleSubmit} className="linear-card p-8 rounded-3xl space-y-6">
-            <div className="flex items-center justify-between border-b border-zinc-800 pb-4">
+            <div className="flex items-center justify-between border-b border-line pb-4">
               <div>
-                <h3 className="text-base font-bold text-zinc-100">Step 2: Candidate Details & SIA Information</h3>
-                <p className="text-xs text-zinc-400">Please provide accurate information for UK Home Office & SIA verification</p>
+                <h3 className="text-base font-bold text-primary">Step 2: Candidate Details & SIA Information</h3>
+                <p className="text-xs text-tertiary">Please provide accurate information for UK Home Office & SIA verification</p>
               </div>
-              <span className="text-xs text-emerald-400 font-mono flex items-center gap-1">
+              <span className="text-xs text-emerald-600 font-mono flex items-center gap-1">
                 <Lock className="w-3.5 h-3.5" />
                 <span>SSL Encrypted</span>
               </span>
@@ -201,7 +201,7 @@ export const PublicApplyForm: React.FC = () => {
             {/* Personal Info */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
               <div>
-                <label className="block text-zinc-300 font-medium mb-1">Full Legal Name *</label>
+                <label className="block text-secondary font-medium mb-1">Full Legal Name *</label>
                 <input
                   type="text"
                   required
@@ -213,7 +213,7 @@ export const PublicApplyForm: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-zinc-300 font-medium mb-1">Email Address *</label>
+                <label className="block text-secondary font-medium mb-1">Email Address *</label>
                 <input
                   type="email"
                   required
@@ -225,7 +225,7 @@ export const PublicApplyForm: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-zinc-300 font-medium mb-1">Mobile Phone Number *</label>
+                <label className="block text-secondary font-medium mb-1">Mobile Phone Number *</label>
                 <input
                   type="text"
                   required
@@ -237,7 +237,7 @@ export const PublicApplyForm: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-zinc-300 font-medium mb-1">National Insurance Number *</label>
+                <label className="block text-secondary font-medium mb-1">National Insurance Number *</label>
                 <input
                   type="text"
                   required
@@ -252,7 +252,7 @@ export const PublicApplyForm: React.FC = () => {
             {/* Address */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
               <div className="sm:col-span-2">
-                <label className="block text-zinc-300 font-medium mb-1">UK Residential Address *</label>
+                <label className="block text-secondary font-medium mb-1">UK Residential Address *</label>
                 <input
                   type="text"
                   required
@@ -264,7 +264,7 @@ export const PublicApplyForm: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-zinc-300 font-medium mb-1">Postcode *</label>
+                <label className="block text-secondary font-medium mb-1">Postcode *</label>
                 <input
                   type="text"
                   required
@@ -277,27 +277,27 @@ export const PublicApplyForm: React.FC = () => {
             </div>
 
             {/* SIA Licence Info */}
-            <div className="p-5 rounded-2xl bg-zinc-900/80 border border-zinc-800 space-y-4 text-xs">
-              <h4 className="font-semibold text-zinc-200 text-xs flex items-center gap-2">
-                <ShieldCheck className="w-4 h-4 text-amber-400" />
+            <div className="p-5 rounded-2xl bg-panel-2 border border-line-strong space-y-4 text-xs">
+              <h4 className="font-semibold text-primary text-xs flex items-center gap-2">
+                <ShieldCheck className="w-4 h-4 text-amber-600" />
                 <span>SIA Licence Credentials (Required for Vetting)</span>
               </h4>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-zinc-400 mb-1">SIA Licence Number *</label>
+                  <label className="block text-tertiary mb-1">SIA Licence Number *</label>
                   <input
                     type="text"
                     required
                     placeholder="0102-3498-1184-9023"
                     value={siaLicenceNo}
                     onChange={e => setSiaLicenceNo(e.target.value)}
-                    className="w-full linear-input rounded-xl p-3 font-mono text-amber-400 font-semibold"
+                    className="w-full linear-input rounded-xl p-3 font-mono text-amber-600 font-semibold"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-zinc-400 mb-1">Licence Sector</label>
+                  <label className="block text-tertiary mb-1">Licence Sector</label>
                   <select
                     value={siaLicenceSector}
                     onChange={e => setSiaLicenceSector(e.target.value as any)}
@@ -311,7 +311,7 @@ export const PublicApplyForm: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-zinc-400 mb-1">Licence Expiry Date</label>
+                  <label className="block text-tertiary mb-1">Licence Expiry Date</label>
                   <input
                     type="date"
                     required
@@ -325,31 +325,31 @@ export const PublicApplyForm: React.FC = () => {
 
             {/* CV Dropzone simulation */}
             <div className="space-y-2 text-xs">
-              <label className="block text-zinc-300 font-medium">Upload CV / Resume (PDF / DOCX) *</label>
-              <div className="border-2 border-dashed border-zinc-800 hover:border-emerald-500/60 rounded-2xl p-6 text-center bg-zinc-900/40 transition-colors cursor-pointer relative">
+              <label className="block text-secondary font-medium">Upload CV / Resume (PDF / DOCX) *</label>
+              <div className="border-2 border-dashed border-line hover:border-emerald-500/60 rounded-2xl p-6 text-center bg-panel-2 transition-colors cursor-pointer relative">
                 <input
                   type="file"
                   onChange={handleFileUpload}
                   accept=".pdf,.docx,.doc"
                   className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                 />
-                <Upload className="w-8 h-8 text-zinc-500 mx-auto mb-2" />
+                <Upload className="w-8 h-8 text-faint mx-auto mb-2" />
                 {uploadedCvName ? (
-                  <div className="text-emerald-400 font-semibold flex items-center justify-center gap-1.5">
+                  <div className="text-emerald-600 font-semibold flex items-center justify-center gap-1.5">
                     <FileText className="w-4 h-4" />
                     <span>{uploadedCvName} Attached</span>
                   </div>
                 ) : (
                   <div>
-                    <span className="text-zinc-300 font-medium">Click to select file or drag & drop</span>
-                    <p className="text-[11px] text-zinc-500 mt-0.5">PDF or Word document up to 10MB</p>
+                    <span className="text-secondary font-medium">Click to select file or drag & drop</span>
+                    <p className="text-[11px] text-faint mt-0.5">PDF or Word document up to 10MB</p>
                   </div>
                 )}
               </div>
             </div>
 
             {/* Terms checkbox */}
-            <div className="flex items-center gap-3 pt-2 text-xs text-zinc-400">
+            <div className="flex items-center gap-3 pt-2 text-xs text-tertiary">
               <input
                 type="checkbox"
                 id="terms"
@@ -366,7 +366,7 @@ export const PublicApplyForm: React.FC = () => {
             <button
               type="submit"
               disabled={!agreedTerms}
-              className="w-full py-4 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-bold text-sm flex items-center justify-center gap-2 shadow-xl shadow-emerald-950/60 transition-all active:scale-[0.99] disabled:opacity-50"
+              className="w-full py-4 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-bold text-sm flex items-center justify-center gap-2 shadow-xl shadow-emerald-500/30 transition-all active:scale-[0.99] disabled:opacity-50"
             >
               <span>Submit Security Guard Application</span>
               <ArrowRight className="w-4 h-4 stroke-[2.5]" />

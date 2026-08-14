@@ -73,7 +73,7 @@ export const AddApplicantModal: React.FC<AddApplicantModalProps> = ({ isOpen, on
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4 text-xs">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-primary font-medium mb-1">Full Name *</label>
               <input
@@ -99,7 +99,7 @@ export const AddApplicantModal: React.FC<AddApplicantModalProps> = ({ isOpen, on
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-primary font-medium mb-1">Phone Number</label>
               <input
@@ -125,7 +125,7 @@ export const AddApplicantModal: React.FC<AddApplicantModalProps> = ({ isOpen, on
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-primary font-medium mb-1">National Insurance No</label>
               <input
@@ -152,7 +152,7 @@ export const AddApplicantModal: React.FC<AddApplicantModalProps> = ({ isOpen, on
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-primary font-medium mb-1">SIA Licence Number</label>
               <input
@@ -175,7 +175,7 @@ export const AddApplicantModal: React.FC<AddApplicantModalProps> = ({ isOpen, on
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="col-span-2">
               <label className="block text-primary font-medium mb-1">Address</label>
               <input
@@ -208,7 +208,7 @@ export const AddApplicantModal: React.FC<AddApplicantModalProps> = ({ isOpen, on
             </button>
             <button
               type="submit"
-              className="px-5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-bold transition-all shadow-lg shadow-emerald-950/40"
+              className="px-5 py-2 rounded-xl bg-[#AF7C28] hover:bg-[#c99a3e] text-white font-bold transition-all shadow-lg shadow-amber-500/25"
             >
               Add Candidate to Pipeline
             </button>

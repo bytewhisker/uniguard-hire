@@ -2,25 +2,35 @@ import React, { useState } from 'react';
 import { useRecruitment } from '../../context/RecruitmentContext';
 import { Shield, ArrowRight, Eye, EyeOff } from 'lucide-react';
 
-export const LoginPage: React.FC = () => {
-  const { publicLogin, setActivePage } = useRecruitment();
+export const SignupPage: React.FC = () => {
+  const { publicSignup, setActivePage } = useRecruitment();
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    if (!email || !password) {
-      setError('Please enter your email and password.');
+    if (!name || !email || !password) {
+      setError('Please fill in all fields.');
       return;
     }
-    const success = await publicLogin(email, password);
-    if (success) {
-      setActivePage('user-dashboard');
+    if (password !== confirmPassword) {
+      setError('Passwords do not match.');
+      return;
+    }
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters.');
+      return;
+    }
+    const result = await publicSignup(name, email, password);
+    if (result.ok) {
+      setActivePage(result.needsConfirm ? 'login' : 'user-dashboard');
     } else {
-      setError('Invalid email or password. Please try again.');
+      setError('Signup failed. That email may already be registered.');
     }
   };
 
@@ -37,10 +47,10 @@ export const LoginPage: React.FC = () => {
             </div>
           </button>
           <button
-            onClick={() => setActivePage('signup')}
+            onClick={() => setActivePage('login')}
             className="text-sm font-medium text-secondary hover:text-primary transition-colors"
           >
-            Create an account
+            Already have an account? Sign in
           </button>
         </div>
       </nav>
@@ -51,8 +61,8 @@ export const LoginPage: React.FC = () => {
             <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4" style={{ backgroundColor: 'rgba(175,124,40,0.1)' }}>
               <Shield className="w-7 h-7" style={{ color: '#AF7C28' }} />
             </div>
-            <h2 className="text-2xl font-bold text-primary mb-2">Welcome Back</h2>
-            <p className="text-sm text-secondary">Sign in to your Uniguard careers account.</p>
+            <h2 className="text-2xl font-bold text-primary mb-2">Create Your Account</h2>
+            <p className="text-sm text-secondary">Join Uniguard's careers portal to apply for security roles.</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">
@@ -61,6 +71,17 @@ export const LoginPage: React.FC = () => {
                 {error}
               </div>
             )}
+            <div>
+              <label className="block text-sm font-medium text-secondary mb-1.5">Full Name</label>
+              <input
+                type="text"
+                required
+                value={name}
+                onChange={e => setName(e.target.value)}
+                placeholder="e.g. Alex Morgan"
+                className="w-full px-4 py-3 rounded-lg border border-line text-primary placeholder:text-faint focus:outline-none focus:border-line-strong focus:ring-2 focus:ring-black/5 transition-all"
+              />
+            </div>
             <div>
               <label className="block text-sm font-medium text-secondary mb-1.5">Email Address</label>
               <input
@@ -80,7 +101,7 @@ export const LoginPage: React.FC = () => {
                   required
                   value={password}
                   onChange={e => setPassword(e.target.value)}
-                  placeholder="Enter your password"
+                  placeholder="At least 6 characters"
                   className="w-full px-4 py-3 pr-10 rounded-lg border border-line text-primary placeholder:text-faint focus:outline-none focus:border-line-strong focus:ring-2 focus:ring-black/5 transition-all"
                 />
                 <button
@@ -92,23 +113,34 @@ export const LoginPage: React.FC = () => {
                 </button>
               </div>
             </div>
+            <div>
+              <label className="block text-sm font-medium text-secondary mb-1.5">Confirm Password</label>
+              <input
+                type={showPassword ? 'text' : 'password'}
+                required
+                value={confirmPassword}
+                onChange={e => setConfirmPassword(e.target.value)}
+                placeholder="Repeat your password"
+                className="w-full px-4 py-3 rounded-lg border border-line text-primary placeholder:text-faint focus:outline-none focus:border-line-strong focus:ring-2 focus:ring-black/5 transition-all"
+              />
+            </div>
 
             <button
               type="submit"
               className="w-full flex items-center justify-center gap-2 px-6 py-3.5 rounded-lg text-base font-bold text-white transition-all hover:shadow-lg active:scale-[0.98]"
               style={{ backgroundColor: '#AF7C28' }}
             >
-              <span>Sign In</span>
+              <span>Create Account</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           </form>
 
           <div className="mt-6 text-center">
             <button
-              onClick={() => setActivePage('signup')}
+              onClick={() => setActivePage('login')}
               className="text-sm text-secondary hover:text-primary transition-colors"
             >
-              Don't have an account? Create one
+              Already have an account? Sign in
             </button>
           </div>
         </div>

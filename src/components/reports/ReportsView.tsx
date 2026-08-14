@@ -13,7 +13,7 @@ export const ReportsView: React.FC = () => {
     <div className="p-8 space-y-8 max-w-7xl mx-auto">
       <div>
         <h2 className="text-lg font-bold text-primary flex items-center gap-2">
-          <BarChart3 className="w-5 h-5 text-emerald-400" />
+          <BarChart3 className="w-5 h-5 text-[#AF7C28]" />
           <span>Vetting & Recruitment Analytics</span>
         </h2>
         <p className="text-xs text-secondary">
@@ -26,7 +26,7 @@ export const ReportsView: React.FC = () => {
         <div className="linear-card p-5 rounded-2xl space-y-2">
           <div className="text-xs font-medium text-secondary">Avg Vetting Turnaround Time</div>
           <div className="text-2xl font-bold text-primary font-mono">2.8 Days</div>
-          <div className="text-[11px] text-emerald-400 flex items-center gap-1">
+          <div className="text-[11px] text-[#AF7C28] flex items-center gap-1">
             <TrendingUp className="w-3.5 h-3.5" />
             <span>0.4 days faster than UK industry avg</span>
           </div>
@@ -34,7 +34,7 @@ export const ReportsView: React.FC = () => {
 
         <div className="linear-card p-5 rounded-2xl space-y-2">
           <div className="text-xs font-medium text-secondary">Vetting Pass Rate</div>
-          <div className="text-2xl font-bold text-emerald-400 font-mono">92.4%</div>
+          <div className="text-2xl font-bold text-[#AF7C28] font-mono">92.4%</div>
           <div className="text-[11px] text-tertiary">Based on 5-item check protocol</div>
         </div>
 
@@ -68,7 +68,7 @@ export const ReportsView: React.FC = () => {
                 <div className="text-[11px] text-tertiary">{row.portal}</div>
               </div>
               <div className="flex items-center gap-6 font-mono">
-                <div className="text-emerald-400">âœ“ {row.approved} Approved</div>
+                <div className="text-[#AF7C28]">✓ {row.approved} Approved</div>
                 <div className="text-amber-400">â³ {row.pending} Pending</div>
                 <div className="text-rose-400">âœ— {row.rejected} Rejected</div>
               </div>

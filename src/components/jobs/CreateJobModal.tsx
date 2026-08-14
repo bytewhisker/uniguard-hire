@@ -77,7 +77,7 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({ isOpen, onClose 
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-primary font-medium mb-1">Department</label>
               <select
@@ -106,7 +106,7 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({ isOpen, onClose 
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
               <label className="block text-primary font-medium mb-1">Pay Rate (£/hr)</label>
               <input
@@ -169,7 +169,7 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({ isOpen, onClose 
             </button>
             <button
               type="submit"
-              className="px-5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-bold transition-all shadow-lg shadow-emerald-950/40"
+              className="px-5 py-2 rounded-xl bg-[#AF7C28] hover:bg-[#c99a3e] text-white font-bold transition-all shadow-lg shadow-amber-500/25"
             >
               Post Job Posting
             </button>

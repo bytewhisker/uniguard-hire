@@ -31,11 +31,11 @@ export const SettingsView: React.FC = () => {
         {/* Company Info */}
         <div className="linear-card p-6 rounded-2xl space-y-4">
           <h3 className="font-semibold text-primary text-sm flex items-center gap-2">
-            <Building className="w-4 h-4 text-emerald-400" />
+            <Building className="w-4 h-4 text-[#AF7C28]" />
             <span>UK Security Firm Profile</span>
           </h3>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-secondary mb-1">Company Registered Name</label>
               <input
@@ -97,7 +97,7 @@ export const SettingsView: React.FC = () => {
                 </div>
 
                 <span className={`px-2.5 py-1 rounded-md text-[10px] font-mono font-semibold ${
-                  item.req ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30' : 'bg-panel-2 text-secondary'
+                  item.req ? 'bg-[#AF7C28]/10 text-[#AF7C28] border border-[#AF7C28]/30' : 'bg-panel-2 text-secondary'
                 }`}>
                   {item.req ? 'REQUIRED' : 'OPTIONAL'}
                 </span>
@@ -109,7 +109,7 @@ export const SettingsView: React.FC = () => {
         <div className="flex justify-end">
           <button
             type="submit"
-            className="px-6 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-bold transition-all shadow-lg shadow-emerald-950/40"
+            className="px-6 py-2.5 rounded-xl bg-[#AF7C28] hover:bg-[#c99a3e] text-white font-bold transition-all shadow-lg shadow-amber-500/25"
           >
             Save Settings
           </button>

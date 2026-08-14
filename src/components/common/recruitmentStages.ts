@@ -13,15 +13,15 @@ export const STAGE_RANK: Record<string, number> = {
 };
 
 export const STAGE_BADGE: Record<string, string> = {
-  applied: 'bg-slate-500/15 text-slate-600 dark:text-slate-300 border-slate-500/25',
-  under_review: 'bg-sky-500/15 text-sky-600 dark:text-sky-400 border-sky-500/25',
-  interview_scheduled: 'bg-purple-500/15 text-purple-600 dark:text-purple-400 border-purple-500/25',
-  interview_completed: 'bg-purple-500/15 text-purple-600 dark:text-purple-400 border-purple-500/25',
-  vetting_in_progress: 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/25',
-  ready_for_contract: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/25',
-  contract_sent: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/25',
-  hired: 'bg-indigo-500/15 text-indigo-600 dark:text-indigo-300 border-indigo-500/25',
-  rejected: 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/25'
+  applied: 'bg-slate-500/15 text-slate-600 border-slate-500/25',
+  under_review: 'bg-sky-500/15 text-sky-600 border-sky-500/25',
+  interview_scheduled: 'bg-purple-500/15 text-purple-600 border-purple-500/25',
+  interview_completed: 'bg-purple-500/15 text-purple-600 border-purple-500/25',
+  vetting_in_progress: 'bg-amber-500/15 text-amber-600 border-amber-500/25',
+  ready_for_contract: 'bg-emerald-500/15 text-emerald-600 border-emerald-500/25',
+  contract_sent: 'bg-emerald-500/15 text-emerald-600 border-emerald-500/25',
+  hired: 'bg-indigo-500/15 text-indigo-600 border-indigo-500/25',
+  rejected: 'bg-rose-500/15 text-rose-600 border-rose-500/25'
 };
 
 export const STAGE_DOT: Record<string, string> = {

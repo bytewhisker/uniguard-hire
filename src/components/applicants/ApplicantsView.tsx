@@ -87,7 +87,7 @@ export const ApplicantsView: React.FC<ApplicantsViewProps> = ({ onOpenAddApplica
 
         <button
           onClick={onOpenAddApplicant}
-          className="px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-semibold text-xs flex items-center gap-2 transition-all active:scale-95 shadow-md shadow-emerald-950/40 shrink-0"
+          className="px-4 py-2.5 rounded-xl bg-[#AF7C28] hover:bg-[#c99a3e] text-white font-semibold text-xs flex items-center gap-2 transition-all active:scale-95 shadow-md shadow-amber-500/25 shrink-0"
         >
           <UserPlus className="w-4 h-4 stroke-[2.5]" />
           <span>Add Applicant</span>
@@ -105,7 +105,7 @@ export const ApplicantsView: React.FC<ApplicantsViewProps> = ({ onOpenAddApplica
               onClick={() => setSelectedStageFilter(f.id)}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-semibold border transition-all whitespace-nowrap ${
                 active
-                  ? 'bg-emerald-500 text-zinc-950 border-emerald-500'
+                  ? 'bg-[#AF7C28] text-white border-[#AF7C28]'
                   : 'bg-panel text-secondary border-line hover:border-line-strong'
               }`}
             >
@@ -126,7 +126,7 @@ export const ApplicantsView: React.FC<ApplicantsViewProps> = ({ onOpenAddApplica
               {pendingTotal} required check{pendingTotal > 1 ? 's' : ''} awaiting review
             </span>
           ) : (
-            <span className="flex items-center gap-1.5 text-emerald-500">
+            <span className="flex items-center gap-1.5 text-[#AF7C28]">
               <CheckCircle2 className="w-3.5 h-3.5" />
               All required checks up to date
             </span>
@@ -166,23 +166,23 @@ export const ApplicantsView: React.FC<ApplicantsViewProps> = ({ onOpenAddApplica
 
                   <div className="flex-1 min-w-0 space-y-1">
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="text-sm font-bold text-primary group-hover:text-emerald-500 transition-colors">
+                      <span className="text-sm font-bold text-primary group-hover:text-[#AF7C28] transition-colors">
                         {applicant.fullName}
                       </span>
                       {stage === 'applied' && (
-                        <span className="text-[9px] bg-indigo-500/20 text-indigo-500 dark:text-indigo-300 border border-indigo-500/30 px-1.5 py-0.5 rounded font-mono">
+                        <span className="text-[9px] bg-indigo-500/20 text-indigo-500 border border-indigo-500/30 px-1.5 py-0.5 rounded font-mono">
                           NEW
                         </span>
                       )}
                       {requiredRejected(applicant) > 0 && (
-                        <span className="text-[9px] bg-rose-500/15 text-rose-500 dark:text-rose-400 border border-rose-500/25 px-1.5 py-0.5 rounded font-mono">
+                        <span className="text-[9px] bg-rose-500/15 text-rose-500 border border-rose-500/25 px-1.5 py-0.5 rounded font-mono">
                           FLAGGED
                         </span>
                       )}
                     </div>
                     <div className="text-[11px] text-secondary truncate">{applicant.appliedJobTitle}</div>
                     <div className="text-[11px] text-tertiary flex items-center gap-1.5">
-                      <ShieldCheck className="w-3 h-3 text-emerald-500 shrink-0" />
+                      <ShieldCheck className="w-3 h-3 text-[#AF7C28] shrink-0" />
                       <span className="font-mono">{applicant.siaLicenceNo}</span>
                       <span className="text-faint">·</span>
                       <span>exp {applicant.siaLicenceExpiry}</span>

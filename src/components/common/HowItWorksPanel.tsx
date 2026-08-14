@@ -16,7 +16,6 @@ import {
   Settings,
   Search,
   Plus,
-  Sun,
   Globe,
   ArrowRight,
   MousePointerClick,
@@ -34,37 +33,37 @@ const PIPELINE_STEPS = [
     icon: <Inbox className="w-4 h-4" />,
     title: 'New Application',
     action: 'Form submitted on the careers page',
-    iconBg: 'bg-slate-500/15 text-slate-500 dark:text-slate-300 border-slate-500/25'
+    iconBg: 'bg-slate-500/15 text-slate-500 border-slate-500/25'
   },
   {
     icon: <Eye className="w-4 h-4" />,
     title: 'Review',
     action: 'You check the CV & SIA details',
-    iconBg: 'bg-sky-500/15 text-sky-500 dark:text-sky-400 border-sky-500/25'
+    iconBg: 'bg-sky-500/15 text-sky-500 border-sky-500/25'
   },
   {
     icon: <CalendarDays className="w-4 h-4" />,
     title: 'Interview',
     action: 'You book & complete the interview',
-    iconBg: 'bg-purple-500/15 text-purple-500 dark:text-purple-400 border-purple-500/25'
+    iconBg: 'bg-purple-500/15 text-purple-500 border-purple-500/25'
   },
   {
     icon: <ShieldCheck className="w-4 h-4" />,
     title: 'Vetting',
     action: 'You approve checks on GOV/SIA portals',
-    iconBg: 'bg-amber-500/15 text-amber-500 dark:text-amber-400 border-amber-500/25'
+    iconBg: 'bg-amber-500/15 text-amber-500 border-amber-500/25'
   },
   {
     icon: <FileText className="w-4 h-4" />,
     title: 'Contract',
     action: 'You send the employment contract',
-    iconBg: 'bg-emerald-500/15 text-emerald-500 dark:text-emerald-400 border-emerald-500/25'
+    iconBg: 'bg-emerald-500/15 text-emerald-500 border-emerald-500/25'
   },
   {
     icon: <UserCheck className="w-4 h-4" />,
     title: 'Hired',
     action: 'Candidate becomes an employee',
-    iconBg: 'bg-indigo-500/15 text-indigo-500 dark:text-indigo-400 border-indigo-500/25'
+    iconBg: 'bg-indigo-500/15 text-indigo-500 border-indigo-500/25'
   }
 ];
 
@@ -79,11 +78,10 @@ const SECTIONS = [
 ];
 
 const QUICK_ACTIONS = [
-  { icon: <Plus className="w-4 h-4" />, iconBg: 'bg-emerald-500/15 text-emerald-500 dark:text-emerald-400', title: 'Quick Action button', desc: 'Top-right of the header — post a new job or add an applicant without leaving your page.' },
-  { icon: <Search className="w-4 h-4" />, iconBg: 'bg-indigo-500/15 text-indigo-500 dark:text-indigo-400', title: 'Search & jump (⌘K)', desc: 'Press Ctrl/⌘ + K anywhere to search candidates, jobs and pages instantly.' },
-  { icon: <Sun className="w-4 h-4" />, iconBg: 'bg-amber-500/15 text-amber-500 dark:text-amber-400', title: 'Theme toggle', desc: 'Switch between light and dark mode any time — your choice is remembered.' },
-  { icon: <MousePointerClick className="w-4 h-4" />, iconBg: 'bg-sky-500/15 text-sky-500 dark:text-sky-400', title: 'Click any candidate', desc: 'Every name in the lists opens a drawer with their checks, documents and interview info.' },
-  { icon: <Globe className="w-4 h-4" />, iconBg: 'bg-purple-500/15 text-purple-500 dark:text-purple-400', title: 'Open Careers Page', desc: 'See the public job board exactly as applicants see it.' }
+  { icon: <Plus className="w-4 h-4" />, iconBg: 'bg-emerald-500/15 text-emerald-500', title: 'Quick Action button', desc: 'Top-right of the header — post a new job or add an applicant without leaving your page.' },
+  { icon: <Search className="w-4 h-4" />, iconBg: 'bg-indigo-500/15 text-indigo-500', title: 'Search & jump (⌘K)', desc: 'Press Ctrl/⌘ + K anywhere to search candidates, jobs and pages instantly.' },
+  { icon: <MousePointerClick className="w-4 h-4" />, iconBg: 'bg-sky-500/15 text-sky-500', title: 'Click any candidate', desc: 'Every name in the lists opens a drawer with their checks, documents and interview info.' },
+  { icon: <Globe className="w-4 h-4" />, iconBg: 'bg-purple-500/15 text-purple-500', title: 'Open Careers Page', desc: 'See the public job board exactly as applicants see it.' }
 ];
 
 export const HowItWorksPanel: React.FC<HowItWorksPanelProps> = ({ isOpen, onClose }) => {
@@ -108,7 +106,7 @@ export const HowItWorksPanel: React.FC<HowItWorksPanelProps> = ({ isOpen, onClos
         {/* Header */}
         <div className="p-6 border-b border-line flex items-start justify-between gap-4 sticky top-0 bg-panel z-10">
           <div className="flex items-start gap-3">
-            <div className="w-10 h-10 rounded-xl bg-emerald-500/15 text-emerald-500 dark:text-emerald-400 flex items-center justify-center shrink-0">
+            <div className="w-10 h-10 rounded-xl bg-emerald-500/15 text-emerald-500 flex items-center justify-center shrink-0">
               <Lightbulb className="w-5 h-5" />
             </div>
             <div>
@@ -156,7 +154,7 @@ export const HowItWorksPanel: React.FC<HowItWorksPanelProps> = ({ isOpen, onClos
                 </React.Fragment>
               ))}
             </div>
-            <div className="mt-3 p-3 rounded-xl bg-amber-500/10 border border-amber-500/25 text-[11px] text-amber-600 dark:text-amber-400">
+            <div className="mt-3 p-3 rounded-xl bg-amber-500/10 border border-amber-500/25 text-[11px] text-amber-600">
               <strong>Important:</strong> Uniguard is a manual system. During the Vetting step, verify each check on the
               official GOV.UK / SIA websites, then click Approve or Reject inside the candidate's card.
             </div>
@@ -172,7 +170,7 @@ export const HowItWorksPanel: React.FC<HowItWorksPanelProps> = ({ isOpen, onClos
               {SECTIONS.map(section => (
                 <div key={section.title} className="p-4 rounded-xl border border-line bg-panel-2">
                   <div className="flex items-center gap-2.5">
-                    <span className="w-8 h-8 rounded-lg bg-emerald-500/15 text-emerald-500 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                    <span className="w-8 h-8 rounded-lg bg-emerald-500/15 text-emerald-500 flex items-center justify-center shrink-0">
                       {section.icon}
                     </span>
                     <span className="text-xs font-bold text-primary">{section.title}</span>
@@ -210,7 +208,7 @@ export const HowItWorksPanel: React.FC<HowItWorksPanelProps> = ({ isOpen, onClos
           <p className="text-[11px] text-tertiary">Tip: press <kbd className="px-1.5 py-0.5 rounded bg-panel-2 border border-line-strong font-mono">Ctrl</kbd> + <kbd className="px-1.5 py-0.5 rounded bg-panel-2 border border-line-strong font-mono">K</kbd> to jump anywhere.</p>
           <button
             onClick={onClose}
-            className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-bold text-xs transition-colors"
+            className="px-4 py-2 rounded-xl bg-[#AF7C28] hover:bg-[#c99a3e] text-white font-bold text-xs transition-colors"
           >
             Got it
           </button>

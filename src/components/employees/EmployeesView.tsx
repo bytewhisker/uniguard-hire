@@ -25,7 +25,7 @@ export const EmployeesView: React.FC = () => {
           </p>
         </div>
 
-        <div className="relative w-72">
+        <div className="relative w-full sm:w-72">
           <Search className="w-4 h-4 text-tertiary absolute left-3 top-1/2 -translate-y-1/2" />
           <input
             type="text"
@@ -61,7 +61,7 @@ export const EmployeesView: React.FC = () => {
 
                 return (
                   <tr key={emp.id} className="hover:bg-panel-dim transition-colors">
-                    <td className="p-4 font-mono font-bold text-emerald-400">
+                    <td className="p-4 font-mono font-bold text-[#AF7C28]">
                       {emp.employeeId}
                     </td>
 
@@ -94,7 +94,7 @@ export const EmployeesView: React.FC = () => {
                       </div>
                     </td>
 
-                    <td className="p-4 font-mono font-bold text-emerald-400">
+                    <td className="p-4 font-mono font-bold text-[#AF7C28]">
                       Â£{emp.hourlyRate.toFixed(2)}/hr
                     </td>
 

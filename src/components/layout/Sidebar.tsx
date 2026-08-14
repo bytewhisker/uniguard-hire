@@ -1,7 +1,6 @@
 ﻿import React from 'react';
 import { useRecruitment } from '../../context/RecruitmentContext';
 import { 
-  ShieldCheck, 
   LayoutDashboard, 
   Briefcase, 
   Users, 
@@ -11,16 +10,23 @@ import {
   Settings,
   Search,
   CheckCircle2,
-  Globe
+  MessageSquare,
+  X
 } from 'lucide-react';
 import type { ActivePage } from '../../types/recruitment';
 
-export const Sidebar: React.FC = () => {
+interface SidebarProps {
+  isMobileOpen: boolean;
+  onCloseMobile: () => void;
+}
+
+export const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen, onCloseMobile }) => {
   const { 
     activePage, 
     setActivePage, 
     applicants, 
-    setIsCommandPaletteOpen 
+    setIsCommandPaletteOpen,
+    unreadAdminCount
   } = useRecruitment();
 
   const pendingChecksCount = applicants.filter(a => 
@@ -48,7 +54,7 @@ export const Sidebar: React.FC = () => {
       label: 'Applicants', 
       icon: <Users className="w-4 h-4" />, 
       badge: readyForContractCount > 0 ? readyForContractCount : (pendingChecksCount > 0 ? pendingChecksCount : undefined),
-      badgeColor: readyForContractCount > 0 ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40' : 'bg-amber-500/20 text-amber-400 border-amber-500/40'
+      badgeColor: readyForContractCount > 0 ? 'bg-amber-500/20 text-amber-600 border-amber-500/40' : 'bg-amber-500/20 text-amber-600 border-amber-500/40'
     },
     { 
       id: 'interviews', 
@@ -61,6 +67,13 @@ export const Sidebar: React.FC = () => {
       icon: <UserCheck className="w-4 h-4" /> 
     },
     { 
+      id: 'chat', 
+      label: 'Candidate Chat', 
+      icon: <MessageSquare className="w-4 h-4" />,
+      badge: unreadAdminCount > 0 ? unreadAdminCount : undefined,
+      badgeColor: 'bg-[#AF7C28] text-white border-[#AF7C28]'
+    },
+    { 
       id: 'reports', 
       label: 'Reports', 
       icon: <BarChart3 className="w-4 h-4" /> 
@@ -69,33 +82,24 @@ export const Sidebar: React.FC = () => {
       id: 'settings', 
       label: 'Settings', 
       icon: <Settings className="w-4 h-4" /> 
-    },
-    {
-      id: 'landing',
-      label: 'Careers Landing Page',
-      icon: <Globe className="w-4 h-4 text-indigo-400" />
     }
   ];
 
-  return (
-    <aside className="w-64 bg-page border-r border-line flex flex-col justify-between shrink-0 h-screen sticky top-0">
+  const asideContent = (
+    <>
       <div>
         {/* Company Header */}
         <div className="p-4 border-b border-line flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-400 flex items-center justify-center text-white shadow-lg shadow-emerald-950/50 border border-emerald-400/30">
-              <ShieldCheck className="w-5 h-5 text-zinc-950 stroke-[2.5]" />
-            </div>
+          <button onClick={() => { setActivePage('landing'); onCloseMobile(); }} className="flex items-center gap-3 cursor-pointer text-left w-full">
+            <img src="/uniguardlogo.png" alt="Uniguard" className="h-9 w-auto object-contain" />
             <div>
-              <div className="font-semibold text-sm text-primary tracking-tight flex items-center gap-1.5">
-                Uniguard Hire
-                <span className="text-[10px] font-mono font-medium px-1.5 py-0.2 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
-                  UK MVP
-                </span>
-              </div>
-              <div className="text-[11px] text-tertiary">Security Vetting Portal</div>
+              <div className="font-bold text-sm text-primary tracking-tight">Admin Panel</div>
+              <div className="text-[11px] text-tertiary">Uniguard Hire</div>
             </div>
-          </div>
+          </button>
+          <button onClick={onCloseMobile} className="lg:hidden p-1.5 rounded-lg text-tertiary hover:text-primary hover:bg-panel-2 transition-colors">
+            <X className="w-5 h-5" />
+          </button>
         </div>
 
         {/* Global Search Shortcut */}
@@ -109,7 +113,7 @@ export const Sidebar: React.FC = () => {
               <span>Search or jump...</span>
             </div>
             <kbd className="px-1.5 py-0.5 rounded bg-panel-2 border border-line-strong text-[10px] font-mono text-secondary">
-              âŒ˜K
+              ⌘K
             </kbd>
           </button>
         </div>
@@ -124,7 +128,7 @@ export const Sidebar: React.FC = () => {
             return (
               <button
                 key={item.id}
-                onClick={() => setActivePage(item.id)}
+                onClick={() => { setActivePage(item.id); onCloseMobile(); }}
                 className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-all ${
                   isActive 
                     ? 'bg-panel-2 text-primary border border-line-strong shadow-sm' 
@@ -132,7 +136,7 @@ export const Sidebar: React.FC = () => {
                 }`}
               >
                 <div className="flex items-center gap-2.5">
-                  <span className={isActive ? 'text-emerald-400' : 'text-tertiary'}>
+                  <span className={isActive ? 'text-[#AF7C28]' : 'text-tertiary'}>
                     {item.icon}
                   </span>
                   <span>{item.label}</span>
@@ -152,7 +156,7 @@ export const Sidebar: React.FC = () => {
       {/* Manual Vetting Info Box */}
       <div className="p-3 border-t border-line">
         <div className="p-3 rounded-xl bg-panel border border-line text-xs space-y-2">
-          <div className="flex items-center gap-2 text-emerald-400 font-medium text-[11px]">
+          <div className="flex items-center gap-2 text-[#AF7C28] font-medium text-[11px]">
             <CheckCircle2 className="w-4 h-4 shrink-0" />
             <span>Manual Vetting Tracker</span>
           </div>
@@ -161,7 +165,7 @@ export const Sidebar: React.FC = () => {
           </p>
           <div className="pt-1 flex items-center justify-between text-[10px] text-tertiary">
             <span>SIA ACS Standard</span>
-            <span className="text-emerald-400">UK Compliant</span>
+            <span className="text-[#AF7C28]">UK Compliant</span>
           </div>
         </div>
 
@@ -178,6 +182,25 @@ export const Sidebar: React.FC = () => {
           </div>
         </div>
       </div>
-    </aside>
+    </>
+  );
+
+  return (
+    <>
+      {/* Desktop sidebar */}
+      <aside className="hidden lg:flex w-64 bg-page border-r border-line flex-col justify-between shrink-0 h-screen sticky top-0">
+        {asideContent}
+      </aside>
+
+      {/* Mobile drawer */}
+      {isMobileOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onCloseMobile} />
+          <aside className="absolute left-0 top-0 h-full w-72 max-w-[85vw] bg-page border-r border-line flex flex-col justify-between overflow-y-auto animate-in slide-in-from-left duration-200">
+            {asideContent}
+          </aside>
+        </div>
+      )}
+    </>
   );
 };

@@ -25,15 +25,35 @@ export const ApplicantDrawer: React.FC = () => {
     sendContract, 
     convertToEmployee,
     updateApplicantStage,
+    scheduleInterviewLive,
     showToast
   } = useRecruitment();
 
   const [activeTab, setActiveTab] = useState<'vetting' | 'personal' | 'interview' | 'audit'>('vetting');
   const [editingNotes, setEditingNotes] = useState<Record<string, string>>({});
+  const [showScheduleModal, setShowScheduleModal] = useState(false);
+  const [draftDate, setDraftDate] = useState('');
+  const [draftTime, setDraftTime] = useState('10:00');
+  const [draftDuration, setDraftDuration] = useState(45);
+  const [draftLocation, setDraftLocation] = useState('Video Call (link to follow)');
+  const [draftNotes, setDraftNotes] = useState('');
 
   if (!selectedApplicant) return null;
 
   const applicant = selectedApplicant;
+
+  const handleScheduleConfirm = () => {
+    if (!draftDate) {
+      showToast('Date Required', 'Pick an interview date first.', 'error');
+      return;
+    }
+    const scheduledAt = new Date(`${draftDate}T${draftTime || '10:00'}`).toISOString();
+    scheduleInterviewLive(applicant.id, scheduledAt, draftDuration, draftLocation, draftNotes || undefined);
+    setShowScheduleModal(false);
+    setDraftDate('');
+    setDraftLocation('Video Call (link to follow)');
+    setDraftNotes('');
+  };
 
   const handleNoteChange = (checkType: VettingCheckType, notes: string) => {
     setEditingNotes(prev => ({ ...prev, [checkType]: notes }));
@@ -65,8 +85,14 @@ export const ApplicantDrawer: React.FC = () => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex justify-end animate-in fade-in duration-200">
-      <div className="w-full max-w-3xl bg-page border-l border-line h-full flex flex-col shadow-2xl overflow-hidden">
+    <div
+      className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-150"
+      onClick={() => setSelectedApplicant(null)}
+    >
+      <div
+        onClick={e => e.stopPropagation()}
+        className="w-full max-w-3xl bg-page border border-line-strong rounded-2xl shadow-2xl flex flex-col overflow-hidden max-h-[92vh] animate-in zoom-in-95 duration-150"
+      >
         
         {/* Top Bar / Header */}
         <div className="p-6 border-b border-line bg-panel-dim space-y-4">
@@ -87,7 +113,7 @@ export const ApplicantDrawer: React.FC = () => {
                 <h2 className="text-lg font-bold text-primary flex items-center gap-2">
                   {applicant.fullName}
                   {applicant.employeeId && (
-                    <span className="text-xs font-mono font-normal px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+                    <span className="text-xs font-mono font-normal px-2 py-0.5 rounded bg-[#AF7C28]/10 text-[#AF7C28] border border-[#AF7C28]/30">
                       ID: {applicant.employeeId}
                     </span>
                   )}
@@ -121,7 +147,7 @@ export const ApplicantDrawer: React.FC = () => {
             {applicant.currentStage === 'ready_for_contract' && (
               <button
                 onClick={() => sendContract(applicant.id)}
-                className="px-4 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-bold text-xs flex items-center gap-2 shadow-lg shadow-emerald-950/50 transition-all active:scale-95 animate-bounce"
+                className="px-4 py-1.5 rounded-xl bg-[#AF7C28] hover:bg-[#c99a3e] text-white font-bold text-xs flex items-center gap-2 shadow-lg shadow-amber-500/25 transition-all active:scale-95 animate-bounce"
               >
                 <Send className="w-3.5 h-3.5" />
                 <span>Send Employment Contract</span>
@@ -500,11 +526,11 @@ export const ApplicantDrawer: React.FC = () => {
                 <div className="p-8 text-center border border-dashed border-line rounded-2xl space-y-3">
                   <Calendar className="w-8 h-8 text-faint mx-auto" />
                   <div className="text-secondary font-medium">No Interview Scheduled</div>
+                  <p className="text-[11px] text-tertiary max-w-sm mx-auto">
+                    Schedule an interview and the candidate will see the date & time on their dashboard instantly, and get notified live.
+                  </p>
                   <button
-                    onClick={() => {
-                      updateApplicantStage(applicant.id, 'interview_scheduled');
-                      showToast('Interview Prompt', 'Use the calendar or schedule button to set interview details.', 'info');
-                    }}
+                    onClick={() => setShowScheduleModal(true)}
                     className="px-4 py-2 rounded-xl bg-purple-500 hover:bg-purple-400 text-zinc-950 font-bold text-xs transition-colors"
                   >
                     Schedule Interview Now
@@ -537,6 +563,105 @@ export const ApplicantDrawer: React.FC = () => {
         </div>
 
       </div>
+
+      {/* Schedule Interview Modal */}
+      {showScheduleModal && (
+        <div
+          className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4"
+          onClick={() => setShowScheduleModal(false)}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            className="w-full max-w-md bg-page border border-line-strong rounded-2xl shadow-2xl p-6 space-y-5 animate-in zoom-in-95 duration-150"
+          >
+            <div className="flex items-center justify-between">
+              <h3 className="font-bold text-primary text-sm flex items-center gap-2">
+                <Calendar className="w-4 h-4 text-purple-400" />
+                Schedule Interview — {applicant.fullName}
+              </h3>
+              <button onClick={() => setShowScheduleModal(false)} className="text-secondary hover:text-primary p-1.5 rounded-lg bg-panel border border-line">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-medium text-secondary">Date *</label>
+                  <input
+                    type="date"
+                    min={new Date().toISOString().slice(0, 10)}
+                    value={draftDate}
+                    onChange={e => setDraftDate(e.target.value)}
+                    className="w-full linear-input rounded-xl px-3 py-2 text-xs"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-medium text-secondary">Time</label>
+                  <input
+                    type="time"
+                    value={draftTime}
+                    onChange={e => setDraftTime(e.target.value)}
+                    className="w-full linear-input rounded-xl px-3 py-2 text-xs"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-medium text-secondary">Duration</label>
+                <select
+                  value={draftDuration}
+                  onChange={e => setDraftDuration(Number(e.target.value))}
+                  className="w-full linear-input rounded-xl px-3 py-2 text-xs"
+                >
+                  <option value={30}>30 minutes</option>
+                  <option value={45}>45 minutes</option>
+                  <option value={60}>1 hour</option>
+                  <option value={90}>1 hour 30 minutes</option>
+                </select>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-medium text-secondary">Location / Meeting Link</label>
+                <input
+                  type="text"
+                  value={draftLocation}
+                  onChange={e => setDraftLocation(e.target.value)}
+                  placeholder="e.g. Video Call (link to follow) or Uniguard Head Office"
+                  className="w-full linear-input rounded-xl px-3 py-2 text-xs"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-medium text-secondary">Notes (optional)</label>
+                <textarea
+                  rows={2}
+                  value={draftNotes}
+                  onChange={e => setDraftNotes(e.target.value)}
+                  placeholder="Anything the candidate should bring or prepare..."
+                  className="w-full linear-input rounded-xl p-3 text-xs"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-1">
+              <button
+                onClick={() => setShowScheduleModal(false)}
+                className="px-4 py-2 rounded-xl bg-panel-2 hover:bg-panel-3 text-primary font-semibold text-xs"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleScheduleConfirm}
+                className="px-4 py-2 rounded-xl bg-purple-500 hover:bg-purple-400 text-zinc-950 font-bold text-xs flex items-center gap-2"
+              >
+                <Calendar className="w-3.5 h-3.5" />
+                Confirm Interview
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -1,15 +1,16 @@
 ﻿import React, { useState } from 'react';
 import { useRecruitment } from '../../context/RecruitmentContext';
-import { Plus, Bell, ChevronRight, UserPlus, Briefcase, Lightbulb, Sun, Moon } from 'lucide-react';
+import { Plus, Bell, ChevronRight, UserPlus, Briefcase, Lightbulb, Menu } from 'lucide-react';
 
 interface HeaderProps {
   onOpenCreateJob: () => void;
   onOpenAddApplicant: () => void;
   onOpenGuide: () => void;
+  onOpenNav: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ onOpenCreateJob, onOpenAddApplicant, onOpenGuide }) => {
-  const { activePage, applicants, theme, toggleTheme } = useRecruitment();
+export const Header: React.FC<HeaderProps> = ({ onOpenCreateJob, onOpenAddApplicant, onOpenGuide, onOpenNav }) => {
+  const { activePage, applicants } = useRecruitment();
   const [showQuickMenu, setShowQuickMenu] = useState(false);
 
   const pageTitleMap: Record<string, { title: string; subtitle: string }> = {
@@ -18,6 +19,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenCreateJob, onOpenAddApplic
     applicants: { title: 'Applicants & Vetting Queue', subtitle: 'Review applications, schedule interviews, and perform manual checks' },
     interviews: { title: 'Interview Calendar', subtitle: 'Scheduled interview slots with security guard candidates' },
     employees: { title: 'Hired Security Staff', subtitle: 'Active employees, badge numbers, and SIA licence expiry tracking' },
+    chat: { title: 'Candidate Messaging', subtitle: 'Live chat with applicants — send, edit and delete messages' },
     reports: { title: 'Vetting & Recruitment Reports', subtitle: 'Audit statistics, pass rates, and compliance analytics' },
     settings: { title: 'System Settings', subtitle: 'UK security company settings & vetting checklist configuration' },
     landing: { title: 'Careers Portal', subtitle: 'Public security guard job application form' }
@@ -31,17 +33,26 @@ export const Header: React.FC<HeaderProps> = ({ onOpenCreateJob, onOpenAddApplic
   ).length;
 
   return (
-    <header className="h-16 border-b border-line bg-page-dim backdrop-blur-md px-6 flex items-center justify-between sticky top-0 z-30">
+    <header className="h-16 border-b border-line bg-page-dim backdrop-blur-md px-4 lg:px-6 flex items-center justify-between sticky top-0 z-30">
       {/* Breadcrumb & Title */}
-      <div>
-        <div className="flex items-center gap-2 text-xs text-tertiary">
-          <span>Uniguard Hire</span>
-          <ChevronRight className="w-3.5 h-3.5 text-faint" />
-          <span className="text-primary font-medium capitalize">{activePage}</span>
+      <div className="flex items-center gap-3 min-w-0">
+        <button
+          onClick={onOpenNav}
+          className="lg:hidden p-2 rounded-lg bg-panel border border-line text-secondary hover:text-primary transition-colors shrink-0"
+          aria-label="Open menu"
+        >
+          <Menu className="w-4 h-4" />
+        </button>
+        <div className="min-w-0">
+          <div className="flex items-center gap-2 text-xs text-tertiary truncate">
+            <span className="hidden sm:inline">Uniguard Hire</span>
+            <ChevronRight className="w-3.5 h-3.5 text-faint hidden sm:inline" />
+            <span className="text-primary font-medium capitalize truncate">{activePage}</span>
+          </div>
+          <h1 className="text-base font-semibold text-primary flex items-center gap-2 truncate">
+            {currentMeta.title}
+          </h1>
         </div>
-        <h1 className="text-base font-semibold text-primary flex items-center gap-2">
-          {currentMeta.title}
-        </h1>
       </div>
 
       {/* Action Bar */}
@@ -57,7 +68,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenCreateJob, onOpenAddApplic
         {/* How it works */}
         <button
           onClick={onOpenGuide}
-          className="hidden md:flex items-center gap-2 px-3 py-2 rounded-lg bg-panel border border-line text-secondary hover:text-emerald-500 hover:border-emerald-500/40 transition-colors"
+          className="hidden md:flex items-center gap-2 px-3 py-2 rounded-lg bg-panel border border-line text-secondary hover:text-[#AF7C28] hover:border-[#AF7C28]/40 transition-colors"
           title="How this dashboard works"
         >
           <Lightbulb className="w-4 h-4" />
@@ -73,20 +84,11 @@ export const Header: React.FC<HeaderProps> = ({ onOpenCreateJob, onOpenAddApplic
           <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-emerald-500 rounded-full"></span>
         </button>
 
-        {/* Theme Toggle */}
-        <button
-          onClick={toggleTheme}
-          className="p-2 rounded-lg bg-panel border border-line text-secondary hover:text-primary transition-colors"
-          title={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
-        >
-          {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-        </button>
-
         {/* Quick Action Dropdown */}
         <div className="relative">
           <button
             onClick={() => setShowQuickMenu(!showQuickMenu)}
-            className="flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-medium text-xs shadow-lg shadow-emerald-950/40 transition-all active:scale-95"
+            className="flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-[#AF7C28] hover:bg-[#c99a3e] text-white font-medium text-xs shadow-lg shadow-amber-500/25 transition-all active:scale-95"
           >
             <Plus className="w-4 h-4 stroke-[2.5]" />
             <span>Quick Action</span>
@@ -101,7 +103,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenCreateJob, onOpenAddApplic
                 }}
                 className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-panel-2 text-primary text-left transition-colors"
               >
-                <Briefcase className="w-4 h-4 text-emerald-400" />
+                <Briefcase className="w-4 h-4 text-[#AF7C28]" />
                 <span>Post New Job</span>
               </button>
               <button
