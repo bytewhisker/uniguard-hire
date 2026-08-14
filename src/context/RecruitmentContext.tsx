@@ -102,6 +102,7 @@ interface RecruitmentContextType {
   publicUser: { name: string; email: string } | null;
   publicLogin: (email: string, password: string) => Promise<boolean>;
   publicSignup: (name: string, email: string, password: string) => Promise<{ ok: boolean; needsConfirm: boolean }>;
+  googleLogin: () => Promise<boolean>;
   publicLogout: () => void;
 
   }
@@ -578,8 +579,9 @@ export const RecruitmentProvider: React.FC<{ children: React.ReactNode }> = ({ c
       if (session?.user) applySessionUser(session.user);
     });
 
-    const { data: { subscription } } = client.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = client.auth.onAuthStateChange((event, session) => {
       applySessionUser(session?.user ?? null);
+      if (event === 'SIGNED_IN' && session?.user) setActivePage('user-dashboard');
     });
 
     return () => subscription.unsubscribe();
@@ -624,6 +626,26 @@ export const RecruitmentProvider: React.FC<{ children: React.ReactNode }> = ({ c
     }
     showToast('Account Created', `Welcome to Uniguard, ${name}!`, 'success');
     return { ok: true, needsConfirm: false };
+  };
+
+  // Google OAuth sign-in (provider configured in Supabase → Authentication → Sign In Providers)
+  const googleLogin = async (): Promise<boolean> => {
+    if (!supabase) {
+      showToast('Google Sign-In Failed', 'Backend is not configured — set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.', 'error');
+      return false;
+    }
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: window.location.origin,
+        queryParams: { access_type: 'offline', prompt: 'consent' },
+      },
+    });
+    if (error) {
+      showToast('Google Sign-In Failed', error.message, 'error');
+      return false;
+    }
+    return true;
   };
 
   const publicLogout = () => {
@@ -983,6 +1005,7 @@ export const RecruitmentProvider: React.FC<{ children: React.ReactNode }> = ({ c
       publicUser,
       publicLogin,
       publicSignup,
+      googleLogin,
       publicLogout
     }}>
       {children}

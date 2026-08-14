@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
 import { useRecruitment } from '../../context/RecruitmentContext';
 import { Shield, ArrowRight, Eye, EyeOff } from 'lucide-react';
+import { GoogleIcon } from '../common/GoogleIcon';
 
 export const LoginPage: React.FC = () => {
-  const { publicLogin, setActivePage } = useRecruitment();
+  const { publicLogin, googleLogin, setActivePage } = useRecruitment();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
+  const [googleBusy, setGoogleBusy] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,6 +24,14 @@ export const LoginPage: React.FC = () => {
     } else {
       setError('Invalid email or password. Please try again.');
     }
+  };
+
+  const handleGoogle = async () => {
+    setError('');
+    setGoogleBusy(true);
+    const ok = await googleLogin();
+    setGoogleBusy(false);
+    if (!ok) setError('Google sign-in could not be started. Please try again.');
   };
 
   return (
@@ -102,6 +112,22 @@ export const LoginPage: React.FC = () => {
               <ArrowRight className="w-4 h-4" />
             </button>
           </form>
+
+          <div className="flex items-center gap-3 my-6">
+            <div className="flex-1 h-px bg-line"></div>
+            <span className="text-xs text-faint uppercase tracking-wider">or</span>
+            <div className="flex-1 h-px bg-line"></div>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleGoogle}
+            disabled={googleBusy}
+            className="w-full flex items-center justify-center gap-3 px-6 py-3.5 rounded-lg border border-line bg-white text-sm font-semibold text-primary hover:border-line-strong hover:shadow-md transition-all active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            <GoogleIcon />
+            <span>{googleBusy ? 'Redirecting to Google…' : 'Continue with Google'}</span>
+          </button>
 
           <div className="mt-6 text-center">
             <button
