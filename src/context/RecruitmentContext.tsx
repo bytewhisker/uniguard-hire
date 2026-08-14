@@ -20,7 +20,7 @@ import {
   INITIAL_EMPLOYEES, 
   INITIAL_ACTIVITY_LOGS 
 } from '../data/mockData';
-import { supabase } from '../lib/supabase';
+import { supabase, isOAuthRedirect } from '../lib/supabase';
 import { STAGE_LABEL } from '../components/common/recruitmentStages';
 
 const VALID_STAGES: ApplicationStage[] = ['applied', 'under_review', 'interview_scheduled', 'interview_completed', 'vetting_in_progress', 'ready_for_contract', 'contract_sent', 'hired', 'rejected'];
@@ -583,7 +583,16 @@ export const RecruitmentProvider: React.FC<{ children: React.ReactNode }> = ({ c
     };
 
     client.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) applySessionUser(session.user);
+      if (session?.user) {
+        applySessionUser(session.user);
+        // Just returned from Google/email OAuth (tokens in the URL)?
+        // supabase-js's SIGNED_IN event can fire before this effect subscribes,
+        // so navigate explicitly instead of relying on it.
+        const path = window.location.pathname;
+        if (isOAuthRedirect && path !== '/confirm' && path !== '/reset-password') {
+          setActivePage('user-dashboard');
+        }
+      }
     });
 
     const { data: { subscription } } = client.auth.onAuthStateChange((event, session) => {
