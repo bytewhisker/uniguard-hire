@@ -630,7 +630,8 @@ export const RecruitmentProvider: React.FC<{ children: React.ReactNode }> = ({ c
       },
     });
     if (error) {
-      showToast('Signup Failed', 'That email is already registered.', 'error');
+      const msg = error.message || 'Signup failed.';
+      showToast('Signup Failed', msg, 'error');
       return { ok: false, needsConfirm: false };
     }
     if (!data.session) {

@@ -37,7 +37,7 @@ export const SignupPage: React.FC = () => {
         setActivePage('user-dashboard');
       }
     } else {
-      setError('Signup failed. That email may already be registered.');
+      setError('Signup failed. If this email was just registered, a confirmation link has already been sent — check your inbox. Otherwise try again in a few minutes.');
     }
   };
 
