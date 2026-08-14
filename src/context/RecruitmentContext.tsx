@@ -68,7 +68,7 @@ interface RecruitmentContextType {
   completeInterview: (applicantId: string, notes: string, rating: number, passed: boolean) => void;
   sendContract: (applicantId: string) => void;
   convertToEmployee: (applicantId: string) => void;
-  createJob: (jobData: Omit<Job, 'id' | 'createdDate' | 'applicantsCount'>) => void;
+  createJob: (jobData: Omit<Job, 'id' | 'createdDate' | 'applicantsCount'>) => Promise<void>;
   addApplicant: (applicantData: Partial<Applicant>) => void;
 
   // Chat
@@ -189,6 +189,37 @@ export const RecruitmentProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
   // Load applications from Supabase into the admin pipeline
   const supabaseIdsRef = React.useRef<Set<string>>(new Set());
+  const jobIdsRef = React.useRef<Set<string>>(new Set());
+
+  const supabaseRowToJob = (row: any): Job => {
+    jobIdsRef.current.add(row.id);
+    const types: Job['employmentType'][] = ['Full-Time', 'Part-Time', 'Zero-Hours', 'Shift-Based'];
+    const siaTypes: Job['siaRequirement'][] = ['Door Supervision', 'Security Guarding', 'CCTV (PSS)', 'Close Protection', 'None'];
+    const statuses: Job['status'][] = ['active', 'draft', 'closed'];
+    return {
+      id: row.id,
+      title: row.title || 'Untitled Role',
+      department: row.department || 'Security',
+      location: row.location || '',
+      payRate: Number(row.pay_rate ?? 0),
+      employmentType: types.includes(row.employment_type) ? row.employment_type : 'Full-Time',
+      siaRequirement: siaTypes.includes(row.sia_requirement) ? row.sia_requirement : 'Security Guarding',
+      status: statuses.includes(row.status) ? row.status : 'active',
+      createdDate: row.created_date || (row.created_at || '').slice(0, 10),
+      description: row.description || '',
+      applicantsCount: Number(row.applicants_count ?? 0),
+    } as Job;
+  };
+
+  const mergeJobs = (incoming: Job[]) => {
+    setJobs(prev => {
+      const incomingIds = new Set(incoming.map(j => j.id));
+      const kept = prev.filter(j => j.id.startsWith('job-') && !incomingIds.has(j.id));
+      const byId = new Map(kept.map(j => [j.id, j]));
+      incoming.forEach(j => byId.set(j.id, j));
+      return [...byId.values()];
+    });
+  };
 
   const supabaseRowToApplicant = (row: any): Applicant => {
     const fd = row.form_data || {};
@@ -275,12 +306,14 @@ export const RecruitmentProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const syncAll = React.useCallback(async () => {
     if (!supabase) return;
     try {
-      const [apps, msgs, ivs] = await Promise.all([
+      const [apps, msgs, ivs, jobRows] = await Promise.all([
         supabase.from('applications').select('*').order('created_at', { ascending: false }),
         supabase.from('messages').select('*').order('created_at', { ascending: true }),
         supabase.from('interviews').select('*'),
+        supabase.from('jobs').select('*').order('created_at', { ascending: false }),
       ]);
       if (apps.data) reconcileApplicants(apps.data.map(supabaseRowToApplicant));
+      if (jobRows.data) mergeJobs(jobRows.data.map(supabaseRowToJob));
       if (msgs.data) mergeMessages(msgs.data.map(supabaseRowToMessage));
       if (ivs.data) {
         const incoming = ivs.data.map(supabaseRowToInterview);
@@ -363,6 +396,23 @@ export const RecruitmentProvider: React.FC<{ children: React.ReactNode }> = ({ c
         .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'interviews' }, (payload) => {
           const iv = supabaseRowToInterview(payload.new as any);
           setInterviews(prev => prev.map(x => x.id === iv.id ? iv : x));
+        })
+        .subscribe(),
+
+      // Live: job listings (new/edited jobs appear on candidates' dashboards instantly)
+      client
+        .channel('jobs-live')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'jobs' }, (payload) => {
+          const job = supabaseRowToJob(payload.new as any);
+          setJobs(prev => prev.some(j => j.id === job.id) ? prev : [job, ...prev]);
+        })
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'jobs' }, (payload) => {
+          const job = supabaseRowToJob(payload.new as any);
+          setJobs(prev => prev.map(j => j.id === job.id ? job : j));
+        })
+        .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'jobs' }, (payload) => {
+          const old = payload.old as any;
+          setJobs(prev => prev.filter(j => j.id !== old.id));
         })
         .subscribe(),
     ];
@@ -951,8 +1001,8 @@ export const RecruitmentProvider: React.FC<{ children: React.ReactNode }> = ({ c
     showToast('Candidate Hired! ðŸŽ‰', `${applicant.fullName} is now an active Employee (${newEmpId}).`, 'success');
   };
 
-  // 7. Create Job
-  const createJob = (jobData: Omit<Job, 'id' | 'createdDate' | 'applicantsCount'>) => {
+// 7. Create Job (persisted to Supabase so candidates on any device see it)
+  const createJob = async (jobData: Omit<Job, 'id' | 'createdDate' | 'applicantsCount'>) => {
     const newJob: Job = {
       id: `job-${Date.now()}`,
       createdDate: new Date().toISOString().split('T')[0],
@@ -962,6 +1012,29 @@ export const RecruitmentProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
     setJobs(prev => [newJob, ...prev]);
     showToast('Job Created', `"${jobData.title}" is now active and accepting applicants.`, 'success');
+
+    if (!supabase) return;
+    const { data, error } = await supabase.from('jobs').insert({
+      title: jobData.title,
+      department: jobData.department,
+      location: jobData.location,
+      pay_rate: jobData.payRate,
+      employment_type: jobData.employmentType,
+      sia_requirement: jobData.siaRequirement,
+      status: jobData.status,
+      created_date: newJob.createdDate,
+      description: jobData.description,
+      applicants_count: 0,
+    }).select();
+    if (error) {
+      console.error('Job insert failed:', error.message);
+      showToast('Job Created Locally', 'Could not sync to the server — candidates may not see it yet.', 'warning');
+      return;
+    }
+    if (data && data[0]) {
+      const row = supabaseRowToJob(data[0]);
+      setJobs(prev => prev.map(j => j.id === newJob.id ? row : j));
+    }
   };
 
   // 8. Add Applicant

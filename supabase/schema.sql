@@ -395,6 +395,54 @@ exception when duplicate_object then
 end $$;
 
 -- ---------------------------------------------------------------------------
+-- 9. jobs — admin creates/edits listings; every signed-in user (candidate or
+--    admin) reads them so new vacancies appear on candidate dashboards.
+-- ---------------------------------------------------------------------------
+create table if not exists public.jobs (
+  id uuid primary key default gen_random_uuid(),
+  title text not null default '',
+  department text not null default 'Security',
+  location text not null default '',
+  pay_rate numeric not null default 0,
+  employment_type text not null default 'Full-Time',
+  sia_requirement text not null default 'Security Guarding',
+  status text not null default 'active',
+  created_date text not null default '',
+  description text not null default '',
+  applicants_count integer not null default 0,
+  created_at timestamptz not null default now()
+);
+
+alter table public.jobs enable row level security;
+
+drop policy if exists "jobs select all" on public.jobs;
+create policy "jobs select all"
+  on public.jobs for select to anon, authenticated
+  using (true);
+
+drop policy if exists "jobs insert admin" on public.jobs;
+create policy "jobs insert admin"
+  on public.jobs for insert to authenticated
+  with check (public.is_admin());
+
+drop policy if exists "jobs update admin" on public.jobs;
+create policy "jobs update admin"
+  on public.jobs for update to authenticated
+  using (public.is_admin());
+
+drop policy if exists "jobs delete admin" on public.jobs;
+create policy "jobs delete admin"
+  on public.jobs for delete to authenticated
+  using (public.is_admin());
+
+do $$
+begin
+  alter publication supabase_realtime add table public.jobs;
+exception when duplicate_object then
+  null;
+end $$;
+
+-- ---------------------------------------------------------------------------
 -- 8. LEGACY-DATA AUDIT + SAFE BACKFILL (read this section before running)
 --    Existing applications have user_id = NULL. Until linked, they are
 --    visible to ADMINS ONLY (no candidate sees them — by design).
