@@ -15,6 +15,7 @@ import { ToastContainer } from './components/common/ToastContainer';
 import { CommandPalette } from './components/common/CommandPalette';
 import { CreateJobModal } from './components/jobs/CreateJobModal';
 import { AddApplicantModal } from './components/jobs/AddApplicantModal';
+import type { Job } from './types/recruitment';
 import { LandingPage } from './components/public/LandingPage';
 import { LoginPage } from './components/public/LoginPage';
 import { SignupPage } from './components/public/SignupPage';
@@ -67,6 +68,7 @@ const AuthRequired: React.FC = () => {
 const MainLayout: React.FC = () => {
   const { activePage, isAuthenticated, publicUser } = useRecruitment();
   const [isCreateJobOpen, setIsCreateJobOpen] = useState(false);
+  const [editingJob, setEditingJob] = useState<Job | null>(null);
   const [isAddApplicantOpen, setIsAddApplicantOpen] = useState(false);
   const [isGuideOpen, setIsGuideOpen] = useState(false);
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
@@ -113,7 +115,10 @@ const MainLayout: React.FC = () => {
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Header */}
         <Header 
-          onOpenCreateJob={() => setIsCreateJobOpen(true)}
+          onOpenCreateJob={() => {
+            setEditingJob(null);
+            setIsCreateJobOpen(true);
+          }}
           onOpenAddApplicant={() => setIsAddApplicantOpen(true)}
           onOpenGuide={() => setIsGuideOpen(true)}
           onOpenNav={() => setIsMobileNavOpen(true)}
@@ -122,7 +127,18 @@ const MainLayout: React.FC = () => {
         {/* Scrollable View Container */}
         <main className="flex-1 overflow-y-auto">
           {activePage === 'dashboard' && <DashboardView />}
-          {activePage === 'jobs' && <JobsView onOpenCreateJob={() => setIsCreateJobOpen(true)} />}
+          {activePage === 'jobs' && (
+            <JobsView
+              onOpenCreateJob={() => {
+                setEditingJob(null);
+                setIsCreateJobOpen(true);
+              }}
+              onOpenEditJob={(job) => {
+                setEditingJob(job);
+                setIsCreateJobOpen(true);
+              }}
+            />
+          )}
           {activePage === 'applicants' && <ApplicantsView onOpenAddApplicant={() => setIsAddApplicantOpen(true)} />}
           {activePage === 'interviews' && <InterviewCalendarView />}
           {activePage === 'employees' && <EmployeesView />}
@@ -136,7 +152,14 @@ const MainLayout: React.FC = () => {
       <ApplicantDrawer />
       <CommandPalette />
       <ToastContainer />
-      <CreateJobModal isOpen={isCreateJobOpen} onClose={() => setIsCreateJobOpen(false)} />
+      <CreateJobModal
+        isOpen={isCreateJobOpen}
+        onClose={() => {
+          setIsCreateJobOpen(false);
+          setEditingJob(null);
+        }}
+        editingJob={editingJob}
+      />
       <AddApplicantModal isOpen={isAddApplicantOpen} onClose={() => setIsAddApplicantOpen(false)} />
       <HowItWorksPanel isOpen={isGuideOpen} onClose={() => setIsGuideOpen(false)} />
     </div>

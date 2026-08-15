@@ -69,6 +69,7 @@ interface RecruitmentContextType {
   sendContract: (applicantId: string) => void;
   convertToEmployee: (applicantId: string) => void;
   createJob: (jobData: Omit<Job, 'id' | 'createdDate' | 'applicantsCount'>) => Promise<void>;
+  updateJob: (id: string, jobData: Omit<Job, 'id' | 'createdDate' | 'applicantsCount'>) => Promise<void>;
   deleteJob: (id: string) => Promise<void>;
   addApplicant: (applicantData: Partial<Applicant>) => void;
 
@@ -155,29 +156,15 @@ export const RecruitmentProvider: React.FC<{ children: React.ReactNode }> = ({ c
     return () => window.removeEventListener('popstate', onPopState);
   }, []);
   
-  const [jobs, setJobs] = useState<Job[]>(() => {
-    const saved = localStorage.getItem('uniguard_jobs_v2');
-    return saved ? JSON.parse(saved) : INITIAL_JOBS;
-  });
+  const [jobs, setJobs] = useState<Job[]>(INITIAL_JOBS);
 
-  const [applicants, setApplicants] = useState<Applicant[]>(() => {
-    const saved = localStorage.getItem('uniguard_applicants_v2');
-    return saved ? JSON.parse(saved) : INITIAL_APPLICANTS;
-  });
+  const [applicants, setApplicants] = useState<Applicant[]>(INITIAL_APPLICANTS);
 
-  const [employees, setEmployees] = useState<Employee[]>(() => {
-    const saved = localStorage.getItem('uniguard_employees_v2');
-    return saved ? JSON.parse(saved) : INITIAL_EMPLOYEES;
-  });
+  const [employees, setEmployees] = useState<Employee[]>(INITIAL_EMPLOYEES);
 
-  const [activityLogs, setActivityLogs] = useState<ActivityLog[]>(() => {
-    const saved = localStorage.getItem('uniguard_activity_logs_v2');
-    return saved ? JSON.parse(saved) : INITIAL_ACTIVITY_LOGS;
-  });
+  const [activityLogs, setActivityLogs] = useState<ActivityLog[]>(INITIAL_ACTIVITY_LOGS);
 
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
-    return localStorage.getItem('uniguard_auth_v2') === 'true';
-  });
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
 
   const [publicUser, setPublicUser] = useState<{ name: string; email: string } | null>(null);
 
@@ -195,16 +182,14 @@ export const RecruitmentProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const supabaseRowToJob = (row: any): Job => {
     jobIdsRef.current.add(row.id);
     const types: Job['employmentType'][] = ['Full-Time', 'Part-Time', 'Zero-Hours', 'Shift-Based'];
-    const siaTypes: Job['siaRequirement'][] = ['Door Supervision', 'Security Guarding', 'CCTV (PSS)', 'Close Protection', 'None'];
     const statuses: Job['status'][] = ['active', 'draft', 'closed'];
     return {
       id: row.id,
       title: row.title || 'Untitled Role',
-      department: row.department || 'Security',
       location: row.location || '',
       payRate: Number(row.pay_rate ?? 0),
       employmentType: types.includes(row.employment_type) ? row.employment_type : 'Full-Time',
-      siaRequirement: siaTypes.includes(row.sia_requirement) ? row.sia_requirement : 'Security Guarding',
+      siaRequired: !!row.sia_required,
       status: statuses.includes(row.status) ? row.status : 'active',
       createdDate: row.created_date || (row.created_at || '').slice(0, 10),
       description: row.description || '',
@@ -593,27 +578,6 @@ export const RecruitmentProvider: React.FC<{ children: React.ReactNode }> = ({ c
       }
     });
   }, [applicants]);
-
-  // Sync to localStorage
-  useEffect(() => {
-    localStorage.setItem('uniguard_jobs_v2', JSON.stringify(jobs));
-  }, [jobs]);
-
-  useEffect(() => {
-    localStorage.setItem('uniguard_applicants_v2', JSON.stringify(applicants));
-  }, [applicants]);
-
-  useEffect(() => {
-    localStorage.setItem('uniguard_employees_v2', JSON.stringify(employees));
-  }, [employees]);
-
-  useEffect(() => {
-    localStorage.setItem('uniguard_activity_logs_v2', JSON.stringify(activityLogs));
-  }, [activityLogs]);
-
-  useEffect(() => {
-    localStorage.setItem('uniguard_auth_v2', String(isAuthenticated));
-  }, [isAuthenticated]);
 
   // Restore Supabase session → candidate (publicUser) and admin state
   useEffect(() => {
@@ -1017,11 +981,10 @@ export const RecruitmentProvider: React.FC<{ children: React.ReactNode }> = ({ c
     if (!supabase) return;
     const { data, error } = await supabase.from('jobs').insert({
       title: jobData.title,
-      department: jobData.department,
       location: jobData.location,
       pay_rate: jobData.payRate,
       employment_type: jobData.employmentType,
-      sia_requirement: jobData.siaRequirement,
+      sia_required: jobData.siaRequired,
       status: jobData.status,
       created_date: newJob.createdDate,
       description: jobData.description,
@@ -1035,6 +998,42 @@ export const RecruitmentProvider: React.FC<{ children: React.ReactNode }> = ({ c
     if (data && data[0]) {
       const row = supabaseRowToJob(data[0]);
       setJobs(prev => prev.map(j => j.id === newJob.id ? row : j));
+    }
+  };
+
+  // 7a. Update Job (persisted to Supabase so candidates on any device see changes)
+  const updateJob = async (id: string, jobData: Omit<Job, 'id' | 'createdDate' | 'applicantsCount'>) => {
+    const existing = jobs.find(j => j.id === id);
+    if (!existing) return;
+
+    const updatedJob: Job = {
+      ...existing,
+      ...jobData,
+    };
+
+    setJobs(prev => prev.map(j => j.id === id ? updatedJob : j));
+    showToast('Job Updated', `"${jobData.title}" changes are now live.`, 'success');
+
+    if (!supabase) return;
+    if (id.startsWith('job-')) return; // local-only mock job, no DB row
+
+    const { data, error } = await supabase.from('jobs').update({
+      title: jobData.title,
+      location: jobData.location,
+      pay_rate: jobData.payRate,
+      employment_type: jobData.employmentType,
+      sia_required: jobData.siaRequired,
+      status: jobData.status,
+      description: jobData.description,
+    }).eq('id', id).select();
+    if (error) {
+      console.error('Job update failed:', error.message);
+      showToast('Update Failed', 'Could not sync changes to the server.', 'error');
+      return;
+    }
+    if (data && data[0]) {
+      const row = supabaseRowToJob(data[0]);
+      setJobs(prev => prev.map(j => j.id === id ? row : j));
     }
   };
 
@@ -1122,6 +1121,7 @@ export const RecruitmentProvider: React.FC<{ children: React.ReactNode }> = ({ c
       sendContract,
       convertToEmployee,
       createJob,
+      updateJob,
       deleteJob,
       addApplicant,
       sendMessage,

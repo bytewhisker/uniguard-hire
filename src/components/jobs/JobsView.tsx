@@ -1,12 +1,14 @@
 ﻿import React from 'react';
 import { useRecruitment } from '../../context/RecruitmentContext';
-import { Briefcase, MapPin, PoundSterling, Users, ShieldCheck, Plus, Trash2 } from 'lucide-react';
+import { Briefcase, MapPin, PoundSterling, Users, ShieldCheck, Plus, Trash2, Pencil } from 'lucide-react';
+import type { Job } from '../../types/recruitment';
 
 interface JobsViewProps {
   onOpenCreateJob: () => void;
+  onOpenEditJob: (job: Job) => void;
 }
 
-export const JobsView: React.FC<JobsViewProps> = ({ onOpenCreateJob }) => {
+export const JobsView: React.FC<JobsViewProps> = ({ onOpenCreateJob, onOpenEditJob }) => {
   const { jobs, applicants, setActivePage, setSelectedStageFilter, deleteJob } = useRecruitment();
 
   return (
@@ -43,10 +45,7 @@ export const JobsView: React.FC<JobsViewProps> = ({ onOpenCreateJob }) => {
               <div className="space-y-3">
                 <div className="flex items-start justify-between">
                   <div>
-                    <span className="text-[10px] font-semibold uppercase tracking-wider text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded border border-blue-500/20">
-                      {job.department}
-                    </span>
-                    <h3 className="text-base font-bold text-primary group-hover:text-[#AF7C28] transition-colors mt-1.5">
+                    <h3 className="text-base font-bold text-primary group-hover:text-[#AF7C28] transition-colors">
                       {job.title}
                     </h3>
                   </div>
@@ -59,17 +58,26 @@ export const JobsView: React.FC<JobsViewProps> = ({ onOpenCreateJob }) => {
                     {job.status.toUpperCase()}
                   </span>
 
-                  <button
-                    onClick={() => {
-                      if (window.confirm(`Delete "${job.title}"? This removes it from every candidate dashboard immediately.`)) {
-                        deleteJob(job.id);
-                      }
-                    }}
-                    title="Delete job"
-                    className="p-1.5 rounded-lg text-tertiary hover:text-red-400 hover:bg-red-500/10 transition-colors"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => onOpenEditJob(job)}
+                      title="Edit job"
+                      className="p-1.5 rounded-lg text-tertiary hover:text-amber-400 hover:bg-amber-500/10 transition-colors"
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (window.confirm(`Delete "${job.title}"? This removes it from every candidate dashboard immediately.`)) {
+                          deleteJob(job.id);
+                        }
+                      }}
+                      title="Delete job"
+                      className="p-1.5 rounded-lg text-tertiary hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
 
                 <p className="text-xs text-secondary leading-relaxed line-clamp-2">
@@ -88,7 +96,7 @@ export const JobsView: React.FC<JobsViewProps> = ({ onOpenCreateJob }) => {
                   </div>
                   <div className="flex items-center gap-1.5 text-primary">
                     <ShieldCheck className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                    <span>{job.siaRequirement}</span>
+                    <span>{job.siaRequired ? 'SIA Required' : 'No SIA Needed'}</span>
                   </div>
                   <div className="flex items-center gap-1.5 text-primary">
                     <Users className="w-3.5 h-3.5 text-indigo-400 shrink-0" />

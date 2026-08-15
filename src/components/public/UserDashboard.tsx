@@ -514,7 +514,7 @@ export const UserDashboard: React.FC = () => {
                       <span>{job.location}</span>
                     </div>
                     <div className="flex items-center justify-between mt-3 pt-3 border-t border-line">
-                      <span className="text-xs text-secondary">SIA: <span className="font-medium text-primary">{job.siaRequirement}</span></span>
+                      <span className="text-xs text-secondary">SIA: <span className="font-medium text-primary">{job.siaRequired ? 'Required' : 'Not Required'}</span></span>
                       <span className="text-sm font-bold font-mono" style={{ color: '#AF7C28' }}>£{job.payRate.toFixed(2)}/hr</span>
                     </div>
                   </div>

@@ -1,23 +1,47 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRecruitment } from '../../context/RecruitmentContext';
-import { X, Briefcase } from 'lucide-react';
+import { X, Briefcase, Pencil } from 'lucide-react';
 import type { Job } from '../../types/recruitment';
 
 interface CreateJobModalProps {
   isOpen: boolean;
   onClose: () => void;
+  editingJob?: Job | null;
 }
 
-export const CreateJobModal: React.FC<CreateJobModalProps> = ({ isOpen, onClose }) => {
-  const { createJob } = useRecruitment();
+export const CreateJobModal: React.FC<CreateJobModalProps> = ({ isOpen, onClose, editingJob }) => {
+  const { createJob, updateJob } = useRecruitment();
+  const isEditing = !!editingJob;
 
   const [title, setTitle] = useState('');
-  const [department, setDepartment] = useState('Corporate Guarding');
   const [location, setLocation] = useState('');
   const [payRate, setPayRate] = useState('15.50');
   const [employmentType, setEmploymentType] = useState<Job['employmentType']>('Full-Time');
-  const [siaRequirement, setSiaRequirement] = useState<Job['siaRequirement']>('Security Guarding');
+  const [siaRequired, setSiaRequired] = useState<boolean>(true);
+  const [status, setStatus] = useState<Job['status']>('active');
   const [description, setDescription] = useState('');
+
+  // Populate form when editing an existing job
+  useEffect(() => {
+    if (editingJob) {
+      setTitle(editingJob.title);
+      setLocation(editingJob.location);
+      setPayRate(String(editingJob.payRate));
+      setEmploymentType(editingJob.employmentType);
+      setSiaRequired(editingJob.siaRequired);
+      setStatus(editingJob.status);
+      setDescription(editingJob.description);
+    } else {
+      // Reset to defaults for create mode
+      setTitle('');
+      setLocation('');
+      setPayRate('15.50');
+      setEmploymentType('Full-Time');
+      setSiaRequired(true);
+      setStatus('active');
+      setDescription('');
+    }
+  }, [editingJob, isOpen]);
 
   if (!isOpen) return null;
 
@@ -25,22 +49,23 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({ isOpen, onClose 
     e.preventDefault();
     if (!title || !location) return;
 
-    createJob({
+    const jobData = {
       title,
-      department,
       location,
       payRate: parseFloat(payRate) || 15.00,
       employmentType,
-      siaRequirement,
-      status: 'active',
+      siaRequired,
+      status,
       description
-    });
+    };
+
+    if (isEditing && editingJob) {
+      updateJob(editingJob.id, jobData);
+    } else {
+      createJob(jobData);
+    }
 
     onClose();
-    // Reset
-    setTitle('');
-    setLocation('');
-    setDescription('');
   };
 
   return (
@@ -49,12 +74,20 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({ isOpen, onClose 
         {/* Header */}
         <div className="flex items-center justify-between border-b border-line pb-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/30 flex items-center justify-center text-blue-400">
-              <Briefcase className="w-5 h-5" />
+            <div className={`w-10 h-10 rounded-xl border flex items-center justify-center ${
+              isEditing
+                ? 'bg-amber-500/10 border-amber-500/30 text-amber-400'
+                : 'bg-blue-500/10 border-blue-500/30 text-blue-400'
+            }`}>
+              {isEditing ? <Pencil className="w-5 h-5" /> : <Briefcase className="w-5 h-5" />}
             </div>
             <div>
-              <h2 className="text-base font-bold text-primary">Post New Security Job</h2>
-              <p className="text-xs text-secondary">Create a vacancy post for UK security applicants</p>
+              <h2 className="text-base font-bold text-primary">
+                {isEditing ? 'Edit Security Job' : 'Post New Security Job'}
+              </h2>
+              <p className="text-xs text-secondary">
+                {isEditing ? 'Update the vacancy details — changes go live instantly' : 'Create a vacancy post for UK security applicants'}
+              </p>
             </div>
           </div>
 
@@ -77,33 +110,16 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({ isOpen, onClose 
             />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-primary font-medium mb-1">Department</label>
-              <select
-                value={department}
-                onChange={e => setDepartment(e.target.value)}
-                className="w-full linear-input rounded-xl p-3"
-              >
-                <option value="Corporate Guarding">Corporate Guarding</option>
-                <option value="Event & Venue Security">Event & Venue Security</option>
-                <option value="Control Room Operations">Control Room Operations</option>
-                <option value="VIP Protection">VIP Protection</option>
-                <option value="Retail Guarding">Retail Guarding</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-primary font-medium mb-1">UK Location / Site *</label>
-              <input
-                type="text"
-                required
-                placeholder="e.g. Canary Wharf, London"
-                value={location}
-                onChange={e => setLocation(e.target.value)}
-                className="w-full linear-input rounded-xl p-3"
-              />
-            </div>
+          <div>
+            <label className="block text-primary font-medium mb-1">UK Location / Site *</label>
+            <input
+              type="text"
+              required
+              placeholder="e.g. Canary Wharf, London"
+              value={location}
+              onChange={e => setLocation(e.target.value)}
+              className="w-full linear-input rounded-xl p-3"
+            />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -133,17 +149,29 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({ isOpen, onClose 
             </div>
 
             <div>
-              <label className="block text-primary font-medium mb-1">Required SIA Licence</label>
+              <label className="block text-primary font-medium mb-1">SIA Licence Required?</label>
               <select
-                value={siaRequirement}
-                onChange={e => setSiaRequirement(e.target.value as any)}
+                value={siaRequired ? 'yes' : 'no'}
+                onChange={e => setSiaRequired(e.target.value === 'yes')}
                 className="w-full linear-input rounded-xl p-3"
               >
-                <option value="Door Supervision">Door Supervision</option>
-                <option value="Security Guarding">Security Guarding</option>
-                <option value="CCTV (PSS)">CCTV (PSS)</option>
-                <option value="Close Protection">Close Protection</option>
-                <option value="None">None</option>
+                <option value="yes">Yes</option>
+                <option value="no">No</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-primary font-medium mb-1">Job Status</label>
+              <select
+                value={status}
+                onChange={e => setStatus(e.target.value as any)}
+                className="w-full linear-input rounded-xl p-3"
+              >
+                <option value="active">Active — Accepting Applicants</option>
+                <option value="draft">Draft — Hidden</option>
+                <option value="closed">Closed — No Longer Accepting</option>
               </select>
             </div>
           </div>
@@ -169,9 +197,13 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({ isOpen, onClose 
             </button>
             <button
               type="submit"
-              className="px-5 py-2 rounded-xl bg-[#AF7C28] hover:bg-[#c99a3e] text-white font-bold transition-all shadow-lg shadow-amber-500/25"
+              className={`px-5 py-2 rounded-xl text-white font-bold transition-all shadow-lg ${
+                isEditing
+                  ? 'bg-amber-500 hover:bg-amber-400 shadow-amber-500/25'
+                  : 'bg-[#AF7C28] hover:bg-[#c99a3e] shadow-amber-500/25'
+              }`}
             >
-              Post Job Posting
+              {isEditing ? 'Save Changes' : 'Post Job Posting'}
             </button>
           </div>
         </form>

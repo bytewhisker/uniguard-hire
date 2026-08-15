@@ -85,11 +85,10 @@ export interface Applicant {
 export interface Job {
   id: string;
   title: string;
-  department: string;
   location: string;
   payRate: number; // e.g. 15.50 (£/hr)
   employmentType: 'Full-Time' | 'Part-Time' | 'Zero-Hours' | 'Shift-Based';
-  siaRequirement: 'Door Supervision' | 'Security Guarding' | 'CCTV (PSS)' | 'Close Protection' | 'None';
+  siaRequired: boolean;
   status: 'active' | 'draft' | 'closed';
   createdDate: string;
   description: string;

@@ -401,17 +401,45 @@ end $$;
 create table if not exists public.jobs (
   id uuid primary key default gen_random_uuid(),
   title text not null default '',
-  department text not null default 'Security',
   location text not null default '',
   pay_rate numeric not null default 0,
   employment_type text not null default 'Full-Time',
-  sia_requirement text not null default 'Security Guarding',
+  sia_required boolean not null default true,
   status text not null default 'active',
   created_date text not null default '',
   description text not null default '',
   applicants_count integer not null default 0,
   created_at timestamptz not null default now()
 );
+
+-- Non-destructive migration for existing installs: keep old data, add the new
+-- column, then drop the old one (only if it exists).
+do $$
+begin
+  if not exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'jobs' and column_name = 'sia_required'
+  ) then
+    alter table public.jobs add column sia_required boolean not null default true;
+  end if;
+
+  if exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'jobs' and column_name = 'sia_requirement'
+  ) then
+    -- Backfill: treat any value other than 'None' as SIA-required
+    update public.jobs set sia_required = case when sia_requirement = 'None' then false else true end
+      where sia_requirement is not null;
+    alter table public.jobs drop column sia_requirement;
+  end if;
+
+  if exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'jobs' and column_name = 'department'
+  ) then
+    alter table public.jobs drop column department;
+  end if;
+end $$;
 
 alter table public.jobs enable row level security;
 
