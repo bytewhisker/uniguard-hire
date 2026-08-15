@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useRecruitment } from '../../context/RecruitmentContext';
-import { ArrowRight, ArrowLeft, CheckCircle2, Plus, Trash2, Upload } from 'lucide-react';
+import { ArrowRight, ArrowLeft, CheckCircle2, Plus, Trash2, Upload, ChevronDown } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { compressEvidence } from '../../lib/compressFile';
 
@@ -14,16 +14,102 @@ const steps = [
   { title: 'Declaration & Sign', sub: 'Final review' },
 ];
 
+const WORLD_LANGUAGES = [
+  'Afrikaans', 'Albanian', 'Amharic', 'Arabic', 'Armenian', 'Azerbaijani', 'Basque', 'Belarusian',
+  'Bengali', 'Bosnian', 'Bulgarian', 'Burmese', 'Catalan', 'Cebuano', 'Chichewa', 'Chinese (Cantonese)',
+  'Chinese (Mandarin)', 'Croatian', 'Czech', 'Danish', 'Dutch', 'English', 'Esperanto', 'Estonian',
+  'Filipino', 'Finnish', 'French', 'Frisian', 'Galician', 'Georgian', 'German', 'Greek', 'Gujarati',
+  'Haitian Creole', 'Hausa', 'Hebrew', 'Hindi', 'Hmong', 'Hungarian', 'Icelandic', 'Igbo', 'Indonesian',
+  'Irish', 'Italian', 'Japanese', 'Javanese', 'Kannada', 'Kazakh', 'Khmer', 'Kinyarwanda', 'Korean',
+  'Kurdish', 'Kyrgyz', 'Lao', 'Latin', 'Latvian', 'Lithuanian', 'Luxembourgish', 'Macedonian',
+  'Malagasy', 'Malay', 'Malayalam', 'Maltese', 'Maori', 'Marathi', 'Mongolian', 'Nepali', 'Norwegian',
+  'Odia', 'Pashto', 'Persian (Farsi)', 'Polish', 'Portuguese', 'Punjabi', 'Romanian', 'Russian',
+  'Samoan', 'Serbian', 'Sesotho', 'Shona', 'Sindhi', 'Sinhala', 'Slovak', 'Slovenian', 'Somali',
+  'Spanish', 'Sundanese', 'Swahili', 'Swedish', 'Tajik', 'Tamil', 'Telugu', 'Thai', 'Turkish',
+  'Ukrainian', 'Urdu', 'Uzbek', 'Vietnamese', 'Welsh', 'Xhosa', 'Yiddish', 'Yoruba', 'Zulu',
+];
+
+const LanguageSelect: React.FC<{ value: string; onChange: (v: string) => void }> = ({ value, onChange }) => {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const ref = useRef<HTMLDivElement>(null);
+  const selected = value ? value.split(',').map(s => s.trim()).filter(Boolean) : [];
+
+  useEffect(() => {
+    const onClick = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+        setQuery('');
+      }
+    };
+    document.addEventListener('mousedown', onClick);
+    return () => document.removeEventListener('mousedown', onClick);
+  }, []);
+
+  const toggle = (lang: string) => {
+    const next = selected.includes(lang) ? selected.filter(l => l !== lang) : [...selected, lang];
+    onChange(next.join(', '));
+  };
+
+  const filtered = query ? WORLD_LANGUAGES.filter(l => l.toLowerCase().includes(query.toLowerCase())) : WORLD_LANGUAGES;
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        type="button"
+        onClick={() => setOpen(o => !o)}
+        className="w-full min-h-[42px] px-4 py-2.5 rounded-lg border border-line text-sm text-left focus:outline-none focus:border-line-strong bg-panel flex flex-wrap items-center gap-1.5"
+      >
+        {selected.length === 0 && <span className="text-faint">Search & select languages…</span>}
+        {selected.map(s => (
+          <span key={s} className="text-xs font-medium px-2 py-1 rounded bg-panel-2 border border-line text-primary">{s}</span>
+        ))}
+        <ChevronDown className={`w-4 h-4 text-faint ml-auto transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+      {open && (
+        <div className="absolute z-30 mt-2 w-full rounded-xl border border-line bg-panel shadow-lg overflow-hidden">
+          <div className="p-2 border-b border-line">
+            <input
+              autoFocus
+              type="text"
+              value={query}
+              onChange={e => setQuery(e.target.value)}
+              placeholder="Search languages…"
+              className="w-full px-3 py-2 rounded-lg border border-line text-sm focus:outline-none focus:border-line-strong bg-panel-2"
+            />
+          </div>
+          <div className="max-h-52 overflow-y-auto p-1.5">
+            {filtered.length === 0 && <p className="text-xs text-faint px-3 py-2">No languages match "{query}"</p>}
+            {filtered.map(lang => (
+              <button
+                key={lang}
+                type="button"
+                onClick={() => toggle(lang)}
+                className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-left transition-colors ${selected.includes(lang) ? 'bg-amber-50 text-amber-700 font-medium' : 'text-secondary hover:bg-panel-2'}`}
+              >
+                <span className={`w-4 h-4 rounded border flex items-center justify-center text-[10px] flex-shrink-0 ${selected.includes(lang) ? 'border-amber-400 bg-amber-400 text-white' : 'border-line'}`}>
+                  {selected.includes(lang) ? '✓' : ''}
+                </span>
+                {lang}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 const emptyForm = {
-  fullName: '', dob: '', position: '', address: '', telephone: '', mobile: '',
+  fullName: '', dob: '', position: '', address: '', postcode: '', telephone: '', mobile: '',
   niNumber: '', siaLicence: '', hasDrivingLicence: '', drivingLicenceNumber: '',
   education: '', hasFirstAid: '', languages: '', lenAtAddress: '', prevAddresses: '',
   q1: '', q1Details: '', q2: '', q2Details: '', q3: '', q3Details: '',
   q4: '', q4Details: '', q5: '', q5Details: '', q6: '', q6Details: '', q7: '', q7Details: '',
-  ref1Name: '', ref1Address: '', ref1Occupation: '', ref1Known: '',
-  ref2Name: '', ref2Address: '', ref2Occupation: '', ref2Known: '',
-  nokName: '', nokAddress: '', nokTelephone: '', nokMobile: '', nokRelationship: '',
-  charRefDetails: '', charRefTelephone: '', charRefKnown: '',
+  ref1Name: '', ref1Address: '', ref1Postcode: '', ref1Occupation: '', ref1Known: '',
+  ref2Name: '', ref2Address: '', ref2Postcode: '', ref2Occupation: '', ref2Known: '',
+  nokName: '', nokAddress: '', nokPostcode: '', nokTelephone: '', nokMobile: '', nokRelationship: '',
+  charRefName: '', charRefAddress: '', charRefPostcode: '', charRefTelephone: '', charRefKnown: '',
   criminalDetails: '', agree1: false, agree2: false, printName: '', signature: '', sigDate: '',
 };
 
@@ -48,6 +134,7 @@ export const MultiStepApplyForm: React.FC = () => {
 
   const [picker, setPicker] = useState<{ id: number; field: 'from' | 'to'; year: number; month: number | null } | null>(null);
   const [popFlash, setPopFlash] = useState(0);
+  const [evidenceError, setEvidenceError] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
 
@@ -107,17 +194,17 @@ export const MultiStepApplyForm: React.FC = () => {
   const autoFill = () => {
     setForm({
       fullName: 'John Smith', dob: '1990-05-15', position: 'Security Officer — Static Site',
-      address: '12 High Street, London EC1A 1BB', telephone: '020 7123 4567', mobile: '07700 900123',
+      address: '12 High Street, London', postcode: 'EC1A 1BB', telephone: '020 7123 4567', mobile: '07700 900123',
       niNumber: 'QQ 12 34 56 C', siaLicence: 'SIA123456', hasDrivingLicence: 'yes',
       drivingLicenceNumber: 'SMITH901055J9AB', education: 'City of London College', hasFirstAid: 'yes',
       languages: 'English, Spanish', lenAtAddress: '5plus', prevAddresses: '',
       q1: 'no', q1Details: '', q2: 'no', q2Details: '', q3: 'no', q3Details: '',
       q4: 'no', q4Details: '', q5: 'no', q5Details: '', q6: 'no', q6Details: '', q7: 'yes', q7Details: '',
-      ref1Name: 'Sarah Jones', ref1Address: '5 Park Lane, London W1K 1AH', ref1Occupation: 'Teacher', ref1Known: '8',
-      ref2Name: 'David Brown', ref2Address: '22 Green Road, London N1 2AB', ref2Occupation: 'Engineer', ref2Known: '5',
-      nokName: 'Emma Smith', nokAddress: '12 High Street, London EC1A 1BB', nokTelephone: '020 7123 4567',
+      ref1Name: 'Sarah Jones', ref1Address: '5 Park Lane, London', ref1Postcode: 'W1K 1AH', ref1Occupation: 'Teacher', ref1Known: '8',
+      ref2Name: 'David Brown', ref2Address: '22 Green Road, London', ref2Postcode: 'N1 2AB', ref2Occupation: 'Engineer', ref2Known: '5',
+      nokName: 'Emma Smith', nokAddress: '12 High Street, London', nokPostcode: 'EC1A 1BB', nokTelephone: '020 7123 4567',
       nokMobile: '07700 900456', nokRelationship: 'Wife',
-      charRefDetails: 'Michael Green, 44 Oak Avenue, London SW1 1AA', charRefTelephone: '07700 900789', charRefKnown: '6',
+      charRefName: 'Michael Green', charRefAddress: '44 Oak Avenue, London', charRefPostcode: 'SW1 1AA', charRefTelephone: '07700 900789', charRefKnown: '6',
       criminalDetails: '', agree1: true, agree2: true, printName: 'John Smith', signature: 'John Smith', sigDate: '',
     });
     setActivities([
@@ -142,6 +229,12 @@ export const MultiStepApplyForm: React.FC = () => {
         setPopFlash(f => f + 1);
         return;
       }
+      if (activities.some(a => !a.evidence && !a.file)) {
+        setEvidenceError(true);
+        setPopFlash(f => f + 1);
+        return;
+      }
+      setEvidenceError(false);
     }
     if (current < steps.length - 1) setCurrent(current + 1);
   };
@@ -295,8 +388,12 @@ export const MultiStepApplyForm: React.FC = () => {
                       </select>
                     </div>
                     <div className="sm:col-span-2">
-                      <label className="block text-sm font-medium text-secondary mb-1.5">Home address, inc. postcode <span style={{ color: '#AF7C28' }}>•</span></label>
-                      <textarea required value={form.address} onChange={e => update('address', e.target.value)} rows={3} className="w-full px-4 py-2.5 rounded-lg border border-line text-sm focus:outline-none focus:border-line-strong bg-panel"></textarea>
+                      <label className="block text-sm font-medium text-secondary mb-1.5">Home address <span style={{ color: '#AF7C28' }}>•</span></label>
+                      <textarea required value={form.address} onChange={e => update('address', e.target.value)} rows={3} placeholder="House number and street" className="w-full px-4 py-2.5 rounded-lg border border-line text-sm focus:outline-none focus:border-line-strong bg-panel"></textarea>
+                    </div>
+                    <div className="sm:col-span-2">
+                      <label className="block text-sm font-medium text-secondary mb-1.5">Postcode <span style={{ color: '#AF7C28' }}>•</span></label>
+                      <input type="text" required value={form.postcode} onChange={e => update('postcode', e.target.value)} placeholder="e.g. EC1A 1BB" className="w-full px-4 py-2.5 rounded-lg border border-line text-sm focus:outline-none focus:border-line-strong bg-panel font-mono" />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-secondary mb-1.5">Telephone</label>
@@ -311,8 +408,8 @@ export const MultiStepApplyForm: React.FC = () => {
                       <input type="text" required value={form.niNumber} onChange={e => update('niNumber', e.target.value)} placeholder="QQ 12 34 56 C" className="w-full px-4 py-2.5 rounded-lg border border-line text-sm focus:outline-none focus:border-line-strong bg-panel font-mono" />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-secondary mb-1.5">SIA licence number</label>
-                      <input type="text" value={form.siaLicence} onChange={e => update('siaLicence', e.target.value)} placeholder="Leave blank if not yet licensed" className="w-full px-4 py-2.5 rounded-lg border border-line text-sm focus:outline-none focus:border-line-strong bg-panel font-mono" />
+                      <label className="block text-sm font-medium text-secondary mb-1.5">SIA licence number <span style={{ color: '#AF7C28' }}>•</span></label>
+                      <input type="text" required value={form.siaLicence} onChange={e => update('siaLicence', e.target.value)} placeholder="SIA licence number" className="w-full px-4 py-2.5 rounded-lg border border-line text-sm focus:outline-none focus:border-line-strong bg-panel font-mono" />
                     </div>
                   </div>
                 </fieldset>
@@ -345,8 +442,8 @@ export const MultiStepApplyForm: React.FC = () => {
                       <input type="text" value={form.education} onChange={e => update('education', e.target.value)} className="w-full px-4 py-2.5 rounded-lg border border-line text-sm focus:outline-none focus:border-line-strong bg-panel" />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-secondary mb-1.5">Foreign languages spoken</label>
-                      <input type="text" value={form.languages} onChange={e => update('languages', e.target.value)} className="w-full px-4 py-2.5 rounded-lg border border-line text-sm focus:outline-none focus:border-line-strong bg-panel" />
+                      <label className="block text-sm font-medium text-secondary mb-1.5">Foreign languages spoken <span className="text-faint font-normal">(select all that apply)</span></label>
+                      <LanguageSelect value={form.languages} onChange={v => update('languages', v)} />
                     </div>
                   </div>
                   <div className="mt-4">
@@ -371,7 +468,7 @@ export const MultiStepApplyForm: React.FC = () => {
                   const ok = months >= 60;
                   if (!hasAny) return null;
                   return (
-                    <div key={popFlash} className={`flex items-start justify-between gap-4 p-4 rounded-xl border ${ok ? 'border-emerald-200 bg-emerald-50' : 'border-rose-200 bg-rose-50'}` + (popFlash > 0 && !ok ? ' animate-pop-in' : '')}>
+                    <div key={popFlash} className={`flex items-start justify-between gap-4 p-4 rounded-xl border ${ok && !evidenceError ? 'border-emerald-200 bg-emerald-50' : 'border-rose-200 bg-rose-50'}` + (popFlash > 0 && !ok ? ' animate-pop-in' : '')}>
                       <div>
                         <p className={`text-sm font-bold ${ok ? 'text-emerald-700' : 'text-rose-600'}`}>
                           {ok ? 'Minimum 5 years covered' : 'At least 5 years of activity needed'}
@@ -386,6 +483,15 @@ export const MultiStepApplyForm: React.FC = () => {
                     </div>
                   );
                 })()}
+
+                {evidenceError && (
+                  <div key="evidence-banner" className="flex items-start gap-3 p-4 rounded-xl border border-rose-200 bg-rose-50 animate-pop-in">
+                    <div>
+                      <p className="text-sm font-bold text-rose-600">Evidence required</p>
+                      <p className="text-xs text-rose-500 mt-0.5">Upload evidence for every activity before continuing.</p>
+                    </div>
+                  </div>
+                )}
 
                 {activities.map((activity, index) => (
                   <div key={activity.id} className="rounded-xl border border-line bg-panel p-5 sm:p-6">
@@ -567,7 +673,7 @@ export const MultiStepApplyForm: React.FC = () => {
                         )}
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-secondary mb-1.5">Evidence <span className="text-faint font-normal">(optional)</span></label>
+                        <label className="block text-sm font-medium text-secondary mb-1.5">Evidence <span style={{ color: '#AF7C28' }}>•</span></label>
                         <div className="relative">
                           <input
                             type="file"
@@ -577,16 +683,18 @@ export const MultiStepApplyForm: React.FC = () => {
                                     const f = e.target.files[0];
                                     updateActivity(activity.id, 'evidence', f.name);
                                     setActivities(prev => prev.map(a => a.id === activity.id ? { ...a, file: f } : a));
+                                    setEvidenceError(false);
                                   }
                                 }}
                           />
-                          <div className="w-full h-[42px] rounded-lg border border-dashed border-line bg-panel-2 flex items-center justify-center gap-2 px-3 cursor-pointer hover:border-line-strong transition-colors">
+                          <div className={`w-full h-[42px] rounded-lg border border-dashed bg-panel-2 flex items-center justify-center gap-2 px-3 cursor-pointer transition-colors ${evidenceError && !activity.evidence ? 'border-rose-300 bg-rose-50' : 'border-line hover:border-line-strong'}`}>
                             <Upload className="w-3.5 h-3.5 text-faint flex-shrink-0" />
                             <span className={`text-xs truncate ${activity.evidence ? 'font-medium' : 'text-faint'}`} style={activity.evidence ? { color: '#AF7C28' } : {}}>
                               {activity.evidence || 'Upload document'}
                             </span>
                           </div>
                         </div>
+                        {evidenceError && !activity.evidence && <p className="mt-1.5 text-[10px] font-medium text-rose-500">Evidence is required for every activity.</p>}
                         <p className="mt-1.5 text-[10px] text-faint">PDF, JPG or PNG — max 5MB</p>
                       </div>
                       <div>
@@ -692,8 +800,12 @@ export const MultiStepApplyForm: React.FC = () => {
                       <input type="text" required value={form.ref1Name} onChange={e => update('ref1Name', e.target.value)} className="w-full px-4 py-2.5 rounded-lg border border-line text-sm focus:outline-none focus:border-line-strong bg-panel" />
                     </div>
                     <div className="sm:col-span-2">
-                      <label className="block text-sm font-medium text-secondary mb-1.5">Address, inc. postcode <span style={{ color: '#AF7C28' }}>•</span></label>
-                      <textarea required value={form.ref1Address} onChange={e => update('ref1Address', e.target.value)} rows={2} className="w-full px-4 py-2.5 rounded-lg border border-line text-sm focus:outline-none focus:border-line-strong bg-panel"></textarea>
+                      <label className="block text-sm font-medium text-secondary mb-1.5">Address <span style={{ color: '#AF7C28' }}>•</span></label>
+                      <textarea required value={form.ref1Address} onChange={e => update('ref1Address', e.target.value)} rows={2} placeholder="House number and street, town/city" className="w-full px-4 py-2.5 rounded-lg border border-line text-sm focus:outline-none focus:border-line-strong bg-panel"></textarea>
+                    </div>
+                    <div className="sm:col-span-2">
+                      <label className="block text-sm font-medium text-secondary mb-1.5">Postcode <span style={{ color: '#AF7C28' }}>•</span></label>
+                      <input type="text" required value={form.ref1Postcode} onChange={e => update('ref1Postcode', e.target.value)} placeholder="e.g. W1K 1AH" className="w-full px-4 py-2.5 rounded-lg border border-line text-sm focus:outline-none focus:border-line-strong bg-panel font-mono" />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-secondary mb-1.5">Occupation</label>
@@ -714,8 +826,12 @@ export const MultiStepApplyForm: React.FC = () => {
                       <input type="text" required value={form.ref2Name} onChange={e => update('ref2Name', e.target.value)} className="w-full px-4 py-2.5 rounded-lg border border-line text-sm focus:outline-none focus:border-line-strong bg-panel" />
                     </div>
                     <div className="sm:col-span-2">
-                      <label className="block text-sm font-medium text-secondary mb-1.5">Address, inc. postcode <span style={{ color: '#AF7C28' }}>•</span></label>
-                      <textarea required value={form.ref2Address} onChange={e => update('ref2Address', e.target.value)} rows={2} className="w-full px-4 py-2.5 rounded-lg border border-line text-sm focus:outline-none focus:border-line-strong bg-panel"></textarea>
+                      <label className="block text-sm font-medium text-secondary mb-1.5">Address <span style={{ color: '#AF7C28' }}>•</span></label>
+                      <textarea required value={form.ref2Address} onChange={e => update('ref2Address', e.target.value)} rows={2} placeholder="House number and street, town/city" className="w-full px-4 py-2.5 rounded-lg border border-line text-sm focus:outline-none focus:border-line-strong bg-panel"></textarea>
+                    </div>
+                    <div className="sm:col-span-2">
+                      <label className="block text-sm font-medium text-secondary mb-1.5">Postcode <span style={{ color: '#AF7C28' }}>•</span></label>
+                      <input type="text" required value={form.ref2Postcode} onChange={e => update('ref2Postcode', e.target.value)} placeholder="e.g. N1 2AB" className="w-full px-4 py-2.5 rounded-lg border border-line text-sm focus:outline-none focus:border-line-strong bg-panel font-mono" />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-secondary mb-1.5">Occupation</label>
@@ -736,8 +852,12 @@ export const MultiStepApplyForm: React.FC = () => {
                       <input type="text" required value={form.nokName} onChange={e => update('nokName', e.target.value)} className="w-full px-4 py-2.5 rounded-lg border border-line text-sm focus:outline-none focus:border-line-strong bg-panel" />
                     </div>
                     <div className="sm:col-span-2">
-                      <label className="block text-sm font-medium text-secondary mb-1.5">Address, inc. postcode <span style={{ color: '#AF7C28' }}>•</span></label>
-                      <textarea required value={form.nokAddress} onChange={e => update('nokAddress', e.target.value)} rows={2} className="w-full px-4 py-2.5 rounded-lg border border-line text-sm focus:outline-none focus:border-line-strong bg-panel"></textarea>
+                      <label className="block text-sm font-medium text-secondary mb-1.5">Address <span style={{ color: '#AF7C28' }}>•</span></label>
+                      <textarea required value={form.nokAddress} onChange={e => update('nokAddress', e.target.value)} rows={2} placeholder="House number and street, town/city" className="w-full px-4 py-2.5 rounded-lg border border-line text-sm focus:outline-none focus:border-line-strong bg-panel"></textarea>
+                    </div>
+                    <div className="sm:col-span-2">
+                      <label className="block text-sm font-medium text-secondary mb-1.5">Postcode <span style={{ color: '#AF7C28' }}>•</span></label>
+                      <input type="text" required value={form.nokPostcode} onChange={e => update('nokPostcode', e.target.value)} placeholder="e.g. EC1A 1BB" className="w-full px-4 py-2.5 rounded-lg border border-line text-sm focus:outline-none focus:border-line-strong bg-panel font-mono" />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-secondary mb-1.5">Telephone</label>
@@ -759,8 +879,16 @@ export const MultiStepApplyForm: React.FC = () => {
                   <p className="text-xs text-faint mb-4">One person who has known you at least 2 years immediately prior to screening. Not a relative, not a previous employer, not someone at your address — a current or previous colleague is fine.</p>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="sm:col-span-2">
-                      <label className="block text-sm font-medium text-secondary mb-1.5">Full name, address & postcode <span style={{ color: '#AF7C28' }}>•</span></label>
-                      <textarea required value={form.charRefDetails} onChange={e => update('charRefDetails', e.target.value)} rows={3} className="w-full px-4 py-2.5 rounded-lg border border-line text-sm focus:outline-none focus:border-line-strong bg-panel"></textarea>
+                      <label className="block text-sm font-medium text-secondary mb-1.5">Full name <span style={{ color: '#AF7C28' }}>•</span></label>
+                      <input type="text" required value={form.charRefName} onChange={e => update('charRefName', e.target.value)} className="w-full px-4 py-2.5 rounded-lg border border-line text-sm focus:outline-none focus:border-line-strong bg-panel" />
+                    </div>
+                    <div className="sm:col-span-2">
+                      <label className="block text-sm font-medium text-secondary mb-1.5">Address <span style={{ color: '#AF7C28' }}>•</span></label>
+                      <textarea required value={form.charRefAddress} onChange={e => update('charRefAddress', e.target.value)} rows={2} placeholder="House number and street, town/city" className="w-full px-4 py-2.5 rounded-lg border border-line text-sm focus:outline-none focus:border-line-strong bg-panel"></textarea>
+                    </div>
+                    <div className="sm:col-span-2">
+                      <label className="block text-sm font-medium text-secondary mb-1.5">Postcode <span style={{ color: '#AF7C28' }}>•</span></label>
+                      <input type="text" required value={form.charRefPostcode} onChange={e => update('charRefPostcode', e.target.value)} placeholder="e.g. SW1 1AA" className="w-full px-4 py-2.5 rounded-lg border border-line text-sm focus:outline-none focus:border-line-strong bg-panel font-mono" />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-secondary mb-1.5">Full telephone number <span style={{ color: '#AF7C28' }}>•</span></label>
