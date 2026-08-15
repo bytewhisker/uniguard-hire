@@ -100,6 +100,19 @@ const LanguageSelect: React.FC<{ value: string; onChange: (v: string) => void }>
   );
 };
 
+interface ActivityItem {
+  id: number;
+  type: string;
+  title: string;
+  from: string;
+  to: string;
+  evidence: string;
+  evidencePath?: string;
+  mobile: string;
+  email: string;
+  file: File | null;
+}
+
 const emptyForm = {
   fullName: '', dob: '', position: '', address: '', postcode: '', telephone: '', mobile: '',
   niNumber: '', siaLicence: '', hasDrivingLicence: '', drivingLicenceNumber: '',
@@ -113,7 +126,7 @@ const emptyForm = {
   criminalDetails: '', agree1: false, agree2: false, printName: '', signature: '', sigDate: '',
 };
 
-const sampleActivity = (id: number, type: string, title: string, from: string, to: string, mobile: string, email: string) => ({ id, type, title, from, to, evidence: '', mobile, email, file: null as File | null });
+const sampleActivity = (id: number, type: string, title: string, from: string, to: string, mobile: string, email: string): ActivityItem => ({ id, type, title, from, to, evidence: '', mobile, email, file: null });
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const WEEKDAYS = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
@@ -129,22 +142,23 @@ const ALLOWED_EVIDENCE_TYPES = [
 const MAX_EVIDENCE_BYTES = 10 * 1024 * 1024;
 
 export const MultiStepApplyForm: React.FC = () => {
-  const { jobs, setActivePage, publicUser, showToast } = useRecruitment();
+  const { jobs, setActivePage, publicUser, showToast, pendingJobId } = useRecruitment();
   const [current, setCurrent] = useState(0);
   const [submitted, setSubmitted] = useState(false);
   const [refNum, setRefNum] = useState('');
 
-  const selectedJob = jobs[0];
+  const selectedJob = jobs.find(j => j.id === pendingJobId) || jobs[0];
 
   const [form, setForm] = useState(emptyForm);
 
-  const [activities, setActivities] = useState([
-    { id: 1, type: 'education', title: '', from: '', to: '', evidence: '', mobile: '', email: '', file: null as File | null },
+  const [activities, setActivities] = useState<ActivityItem[]>([
+    { id: 1, type: 'education', title: '', from: '', to: '', evidence: '', mobile: '', email: '', file: null },
   ]);
 
   const [picker, setPicker] = useState<{ id: number; field: 'from' | 'to'; year: number; month: number | null } | null>(null);
   const [popFlash, setPopFlash] = useState(0);
   const [evidenceError, setEvidenceError] = useState(false);
+  const [activityError, setActivityError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
 
@@ -194,7 +208,7 @@ export const MultiStepApplyForm: React.FC = () => {
   };
 
   const addActivity = () => {
-    setActivities(prev => [...prev, { id: Date.now(), type: 'education', title: '', from: '', to: '', evidence: '', mobile: '', email: '', file: null as File | null }]);
+    setActivities(prev => [...prev, { id: Date.now(), type: 'education', title: '', from: '', to: '', evidence: '', mobile: '', email: '', file: null }]);
   };
 
   const removeActivity = (id: number) => {
@@ -235,16 +249,25 @@ export const MultiStepApplyForm: React.FC = () => {
   const next = () => {
     if (current === 1) {
       const { months, hasAny } = coverageYears();
-      if (hasAny && months < 60) {
+      const anyFilled = activities.some(a => a.title || a.from || a.to || a.evidence || a.file);
+      if (!anyFilled) {
+        setActivityError('Add at least one activity — fill in the title, From/To dates and evidence.');
         setPopFlash(f => f + 1);
         return;
       }
-      if (activities.some(a => !a.evidence && !a.file)) {
+      const incomplete = activities.find(a => (a.title || a.from || a.to || a.evidence || a.file) && (!a.title || !a.from || !a.to || (!a.evidence && !a.file)));
+      if (incomplete) {
+        setActivityError('Every activity needs a title, From/To dates and evidence.');
         setEvidenceError(true);
         setPopFlash(f => f + 1);
         return;
       }
+      if (hasAny && months < 60) {
+        setPopFlash(f => f + 1);
+        return;
+      }
       setEvidenceError(false);
+      setActivityError('');
     }
     if (current < steps.length - 1) setCurrent(current + 1);
   };
@@ -259,10 +282,11 @@ export const MultiStepApplyForm: React.FC = () => {
         throw new Error('Backend is not configured — set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in your deployment.');
       }
       const { data: { user } } = await supabase.auth.getUser();
-      let storedActivities = activities.map(a => ({ ...a, file: undefined }));
+      type StoredActivity = Omit<ActivityItem, 'file'> & { file?: undefined };
+      let storedActivities: StoredActivity[] = activities.map(a => ({ ...a, file: undefined }));
 
       if (user) {
-        const uploaded: typeof storedActivities = [];
+        const uploaded: StoredActivity[] = [];
         for (const a of activities) {
           if (!a.file) { uploaded.push({ ...a, file: undefined }); continue; }
           const compressed = await compressEvidence(a.file);
@@ -271,7 +295,7 @@ export const MultiStepApplyForm: React.FC = () => {
           const { error: upErr } = await supabase.storage.from('evidence').upload(path, compressed, { cacheControl: '3600', upsert: false });
           if (upErr) throw new Error(`Evidence upload failed: ${upErr.message}`);
           const { data } = supabase.storage.from('evidence').getPublicUrl(path);
-          uploaded.push({ ...a, evidence: data.publicUrl, file: undefined });
+          uploaded.push({ ...a, evidence: data.publicUrl, evidencePath: path, file: undefined });
         }
         storedActivities = uploaded;
       }
@@ -499,6 +523,15 @@ export const MultiStepApplyForm: React.FC = () => {
                     <div>
                       <p className="text-sm font-bold text-rose-600">Evidence required</p>
                       <p className="text-xs text-rose-500 mt-0.5">Upload evidence for every activity before continuing.</p>
+                    </div>
+                  </div>
+                )}
+
+                {activityError && (
+                  <div key="activity-banner" className="flex items-start gap-3 p-4 rounded-xl border border-rose-200 bg-rose-50 animate-pop-in">
+                    <div>
+                      <p className="text-sm font-bold text-rose-600">Activity details incomplete</p>
+                      <p className="text-xs text-rose-500 mt-0.5">{activityError}</p>
                     </div>
                   </div>
                 )}

@@ -92,7 +92,7 @@ export const JobsView: React.FC<JobsViewProps> = ({ onOpenCreateJob, onOpenEditJ
                   </div>
                   <div className="flex items-center gap-1.5 text-[#AF7C28] font-mono font-bold">
                     <PoundSterling className="w-3.5 h-3.5 text-[#AF7C28] shrink-0" />
-                    <span>Â£{job.payRate.toFixed(2)}/hr</span>
+                    <span>£{job.payRate.toFixed(2)}/hr</span>
                   </div>
                   <div className="flex items-center gap-1.5 text-primary">
                     <ShieldCheck className="w-3.5 h-3.5 text-amber-400 shrink-0" />

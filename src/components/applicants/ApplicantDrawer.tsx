@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { useRecruitment } from '../../context/RecruitmentContext';
+import { supabase } from '../../lib/supabase';
+import type { ApplicantDocument } from '../../types/recruitment';
 import { 
   X, 
   ShieldCheck, 
@@ -53,6 +55,24 @@ export const ApplicantDrawer: React.FC = () => {
     setDraftDate('');
     setDraftLocation('Video Call (link to follow)');
     setDraftNotes('');
+  };
+
+  const handleDownload = async (doc: ApplicantDocument) => {
+    try {
+      if (!supabase) {
+        showToast('Backend not configured', 'Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.', 'error');
+        return;
+      }
+      if (doc.fileUrl.startsWith('http')) {
+        window.open(doc.fileUrl, '_blank');
+        return;
+      }
+      const { data, error } = await supabase.storage.from('evidence').createSignedUrl(doc.fileUrl, 300);
+      if (error || !data) throw error || new Error('No signed URL');
+      window.open(data.signedUrl, '_blank');
+    } catch {
+      showToast('Download Failed', 'Could not generate a download link for this document.', 'error');
+    }
   };
 
   const handleNoteChange = (checkType: VettingCheckType, notes: string) => {
@@ -450,7 +470,7 @@ export const ApplicantDrawer: React.FC = () => {
                       </div>
 
                       <button
-                        onClick={() => showToast('Downloading Document', `Downloading ${doc.name}`, 'info')}
+                        onClick={() => handleDownload(doc)}
                         className="p-2 rounded-lg bg-panel-2 hover:bg-panel-3 text-primary text-xs flex items-center gap-1.5"
                       >
                         <Download className="w-3.5 h-3.5" />

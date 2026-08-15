@@ -12,7 +12,8 @@ import type {
   ApplicationStage,
   InterviewInfo,
   ChatMessage,
-  ScheduledInterview
+  ScheduledInterview,
+  ApplicantDocument
 } from '../types/recruitment';
 import { 
   INITIAL_APPLICANTS, 
@@ -43,6 +44,9 @@ interface Toast {
 interface RecruitmentContextType {
   activePage: ActivePage;
   setActivePage: (page: ActivePage) => void;
+  
+  pendingJobId: string | null;
+  setPendingJobId: (id: string | null) => void;
   
   jobs: Job[];
   applicants: Applicant[];
@@ -139,6 +143,7 @@ const pageFromPath = (path: string): ActivePage => (PATH_PAGES[path] || 'landing
 
 export const RecruitmentProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [activePage, setActivePageState] = useState<ActivePage>(() => pageFromPath(window.location.pathname));
+  const [pendingJobId, setPendingJobId] = useState<string | null>(null);
 
   const setActivePage = (page: ActivePage) => {
     setActivePageState(page);
@@ -210,13 +215,23 @@ export const RecruitmentProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const supabaseRowToApplicant = (row: any): Applicant => {
     const fd = row.form_data || {};
     supabaseIdsRef.current.add(row.id);
+    const docs = ((fd.activities || []) as any[])
+      .filter((a: any) => a.evidence || a.evidencePath)
+      .map((a: any, i: number): ApplicantDocument => ({
+        id: `ev-${row.id}-${i}`,
+        name: a.evidence ? String(a.evidence).split('/').pop() || 'Evidence document' : 'Evidence document',
+        type: 'proof_address',
+        fileUrl: a.evidencePath || a.evidence,
+        uploadedAt: '',
+        size: 'Evidence',
+      }));
     return {
       id: row.id,
       fullName: row.full_name || 'New Applicant',
       email: row.applicant_email || '',
       phone: fd.mobile || fd.telephone || '',
       address: fd.address || 'London, UK',
-      postcode: '',
+      postcode: fd.postcode || '',
       nationalInsuranceNo: fd.niNumber || '',
       siaLicenceNo: fd.siaLicence || '',
       siaLicenceSector: 'Door Supervision',
@@ -225,7 +240,7 @@ export const RecruitmentProvider: React.FC<{ children: React.ReactNode }> = ({ c
       appliedJobTitle: row.applied_job || '',
       appliedDate: (row.created_at || '').slice(0, 10),
       currentStage: VALID_STAGES.includes(row.status) ? row.status : 'applied',
-      documents: [],
+      documents: docs,
       vettingChecks: defaultChecks(row.id),
     } as Applicant;
   };
@@ -1101,6 +1116,8 @@ export const RecruitmentProvider: React.FC<{ children: React.ReactNode }> = ({ c
     <RecruitmentContext.Provider value={{
       activePage,
       setActivePage,
+      pendingJobId,
+      setPendingJobId,
       jobs,
       applicants,
       employees,

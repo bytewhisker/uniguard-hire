@@ -349,7 +349,7 @@ const UserChat: React.FC<{ app: Applicant; apps: Applicant[] }> = ({ app, apps }
 };
 
 export const UserDashboard: React.FC = () => {
-  const { jobs, publicUser, publicLogout, setActivePage, applicants, messages } = useRecruitment();
+  const { jobs, publicUser, publicLogout, setActivePage, applicants, messages, setPendingJobId } = useRecruitment();
   const [selectedJobId, setSelectedJobId] = useState(jobs[0]?.id || '');
   const [tab, setTab] = useState<'overview' | 'chat'>('overview');
 
@@ -365,6 +365,7 @@ export const UserDashboard: React.FC = () => {
 
   const handleApply = () => {
     if (!selectedJob) return;
+    setPendingJobId(selectedJob.id);
     setActivePage('apply');
   };
 
