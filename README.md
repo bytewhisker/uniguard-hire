@@ -1,32 +1,35 @@
-# React + TypeScript + Vite
+# Uniguard Hire
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Security recruitment & vetting platform. Admin-managed job listings with a candidate apply flow, Google/email OAuth sign-in, and a Supabase-backed backend with realtime sync.
 
-Currently, two official plugins are available:
+## Stack
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- React + TypeScript + Vite
+- Supabase (auth, database, storage, realtime)
+- Deployed on Vercel
 
-## React Compiler
+## Features
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- Job listings synced to Supabase with realtime updates
+- Admin panel: create, edit and delete jobs
+- Candidate dashboard with multi-step apply flow and evidence upload
+- Email confirmation, forgot/reset password and Google OAuth
+- Security audit documented in [SECURITY_AUDIT.md](./SECURITY_AUDIT.md)
 
-## Expanding the Oxlint configuration
+## Development
 
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```bash
+npm install
+npm run dev
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+Set the following env vars (see `.env`):
+
+- `VITE_SUPABASE_URL`
+- `VITE_SUPABASE_ANON_KEY`
+
+## Build
+
+```bash
+npm run build
+```
