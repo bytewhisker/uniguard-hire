@@ -232,8 +232,6 @@ export const MultiStepApplyForm: React.FC = () => {
     if (submitted) setRefNum('REF-' + Math.floor(100000 + Math.random() * 900000));
   }, [submitted]);
 
-  const scrollToTop = () => window.scrollTo({ top: 0, behavior: 'smooth' });
-
   const next = () => {
     if (current === 1) {
       const { months, hasAny } = coverageYears();
@@ -248,17 +246,9 @@ export const MultiStepApplyForm: React.FC = () => {
       }
       setEvidenceError(false);
     }
-    if (current < steps.length - 1) {
-      setCurrent(current + 1);
-      scrollToTop();
-    }
+    if (current < steps.length - 1) setCurrent(current + 1);
   };
-  const back = () => {
-    if (current > 0) {
-      setCurrent(current - 1);
-      scrollToTop();
-    }
-  };
+  const back = () => { if (current > 0) setCurrent(current - 1); };
 
   const handleSubmit = async () => {
     if (!form.agree1 || !form.agree2 || !form.printName || submitting) return;
@@ -356,7 +346,7 @@ export const MultiStepApplyForm: React.FC = () => {
             </div>
             <ul className="space-y-0">
               {steps.map((s, i) => (
-                <li key={i} onClick={() => { if (i <= current) { setCurrent(i); scrollToTop(); } }} className={`flex items-start gap-3 py-3 cursor-pointer transition-opacity ${i <= current ? 'opacity-100' : 'opacity-40'}`}>
+                <li key={i} onClick={() => i <= current && setCurrent(i)} className={`flex items-start gap-3 py-3 cursor-pointer transition-opacity ${i <= current ? 'opacity-100' : 'opacity-40'}`}>
                   <div className={`w-6 h-6 rounded-full border flex items-center justify-center text-[10px] font-mono flex-shrink-0 mt-0.5 ${i < current ? 'bg-emerald-600 border-emerald-600 text-white' : i === current ? 'border-amber-500 text-amber-600' : 'border-line text-faint'}`}>
                     {i < current ? '✓' : i + 1}
                   </div>
@@ -1011,27 +1001,25 @@ export const MultiStepApplyForm: React.FC = () => {
               </div>
             )}
 
-            {/* Navigation — sticky bottom bar, always visible */}
-            <div className="sticky bottom-0 z-40 mt-10 pt-4 pb-2 bg-page/95 backdrop-blur-md border-t border-line">
-              <div className="flex items-center justify-between">
-                <button onClick={back} disabled={current === 0} className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold text-secondary border border-line bg-panel hover:border-line-strong transition-colors disabled:opacity-30 disabled:cursor-not-allowed">
-                  <ArrowLeft className="w-4 h-4" /> Back
+            {/* Navigation */}
+            <div className="flex items-center justify-between mt-10 pt-6 border-t border-line">
+              <button onClick={back} disabled={current === 0} className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold text-secondary border border-line hover:border-line-strong transition-colors disabled:opacity-30 disabled:cursor-not-allowed">
+                <ArrowLeft className="w-4 h-4" /> Back
+              </button>
+              {current < steps.length - 1 ? (
+                <button onClick={next} className="flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-bold text-white transition-all hover:shadow-lg active:scale-[0.98]" style={{ backgroundColor: '#AF7C28' }}>
+                  Continue <ArrowRight className="w-4 h-4" />
                 </button>
-                {current < steps.length - 1 ? (
-                  <button onClick={next} className="flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-bold text-white transition-all hover:shadow-lg active:scale-[0.98]" style={{ backgroundColor: '#AF7C28' }}>
-                    Continue <ArrowRight className="w-4 h-4" />
+              ) : (
+                <div className="flex flex-col items-end gap-2">
+                  {submitError && (
+                    <p className="text-xs font-medium text-rose-600 bg-rose-50 border border-rose-200 rounded-lg px-3 py-2 max-w-sm text-right animate-pop-in">{submitError}</p>
+                  )}
+                  <button onClick={handleSubmit} disabled={!form.agree1 || !form.agree2 || !form.printName || submitting} className="flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-bold text-white transition-all hover:shadow-lg active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed" style={{ backgroundColor: '#AF7C28' }}>
+                    {submitting ? 'Submitting…' : 'Submit application'} <ArrowRight className="w-4 h-4" />
                   </button>
-                ) : (
-                  <div className="flex flex-col items-end gap-2">
-                    {submitError && (
-                      <p className="text-xs font-medium text-rose-600 bg-rose-50 border border-rose-200 rounded-lg px-3 py-2 max-w-sm text-right animate-pop-in">{submitError}</p>
-                    )}
-                    <button onClick={handleSubmit} disabled={!form.agree1 || !form.agree2 || !form.printName || submitting} className="flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-bold text-white transition-all hover:shadow-lg active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed" style={{ backgroundColor: '#AF7C28' }}>
-                      {submitting ? 'Submitting…' : 'Submit application'} <ArrowRight className="w-4 h-4" />
-                    </button>
-                  </div>
-                )}
-              </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
