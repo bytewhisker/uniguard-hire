@@ -118,8 +118,18 @@ const sampleActivity = (id: number, type: string, title: string, from: string, t
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const WEEKDAYS = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
 
+const ALLOWED_EVIDENCE_TYPES = [
+  'application/pdf',
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+];
+const MAX_EVIDENCE_BYTES = 10 * 1024 * 1024;
+
 export const MultiStepApplyForm: React.FC = () => {
-  const { jobs, setActivePage, publicUser } = useRecruitment();
+  const { jobs, setActivePage, publicUser, showToast } = useRecruitment();
   const [current, setCurrent] = useState(0);
   const [submitted, setSubmitted] = useState(false);
   const [refNum, setRefNum] = useState('');
@@ -677,10 +687,21 @@ export const MultiStepApplyForm: React.FC = () => {
                         <div className="relative">
                           <input
                             type="file"
+                            accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx"
                             className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                                 onChange={e => {
                                   if (e.target.files && e.target.files[0]) {
                                     const f = e.target.files[0];
+                                    if (!ALLOWED_EVIDENCE_TYPES.includes(f.type)) {
+                                      showToast('File type not allowed', 'Evidence must be a PDF, JPG, PNG, WebP or Word (.doc/.docx) file.', 'error');
+                                      e.target.value = '';
+                                      return;
+                                    }
+                                    if (f.size > MAX_EVIDENCE_BYTES) {
+                                      showToast('File too large', 'Evidence files must be 10 MB or smaller.', 'error');
+                                      e.target.value = '';
+                                      return;
+                                    }
                                     updateActivity(activity.id, 'evidence', f.name);
                                     setActivities(prev => prev.map(a => a.id === activity.id ? { ...a, file: f } : a));
                                     setEvidenceError(false);
@@ -695,7 +716,7 @@ export const MultiStepApplyForm: React.FC = () => {
                           </div>
                         </div>
                         {evidenceError && !activity.evidence && <p className="mt-1.5 text-[10px] font-medium text-rose-500">Evidence is required for every activity.</p>}
-                        <p className="mt-1.5 text-[10px] text-faint">PDF, JPG or PNG — max 5MB</p>
+                        <p className="mt-1.5 text-[10px] text-faint">PDF, JPG, PNG, WebP or Word — max 10MB</p>
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-secondary mb-1.5">Contact reference — mobile <span className="text-faint font-normal">(optional)</span></label>
