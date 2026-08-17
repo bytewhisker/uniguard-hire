@@ -67,9 +67,17 @@ export const ApplicantDrawer: React.FC = () => {
         window.open(doc.fileUrl, '_blank');
         return;
       }
-      const { data, error } = await supabase.storage.from('evidence').createSignedUrl(doc.fileUrl, 300);
+      const { data, error } = await supabase.storage.from('evidence').createSignedUrl(doc.fileUrl, 300, {
+        download: true
+      });
       if (error || !data) throw error || new Error('No signed URL');
-      window.open(data.signedUrl, '_blank');
+      
+      const a = document.createElement('a');
+      a.href = data.signedUrl;
+      a.style.display = 'none';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
     } catch {
       showToast('Download Failed', 'Could not generate a download link for this document.', 'error');
     }
