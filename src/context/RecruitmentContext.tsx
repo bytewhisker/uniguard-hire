@@ -13,7 +13,8 @@ import type {
   InterviewInfo,
   ChatMessage,
   ScheduledInterview,
-  ApplicantDocument
+  ApplicantDocument,
+  AppSettings
 } from '../types/recruitment';
 import { 
   INITIAL_APPLICANTS, 
@@ -55,6 +56,7 @@ interface RecruitmentContextType {
   interviews: ScheduledInterview[];
   messages: ChatMessage[];
   unreadAdminCount: number;
+  settings: AppSettings;
   
   selectedApplicant: Applicant | null;
   setSelectedApplicant: (applicant: Applicant | null) => void;
@@ -75,6 +77,7 @@ interface RecruitmentContextType {
   createJob: (jobData: Omit<Job, 'id' | 'createdDate' | 'applicantsCount'>) => Promise<void>;
   updateJob: (id: string, jobData: Omit<Job, 'id' | 'createdDate' | 'applicantsCount'>) => Promise<void>;
   deleteJob: (id: string) => Promise<void>;
+  saveSettings: (next: AppSettings) => Promise<void>;
   addApplicant: (applicantData: Partial<Applicant>) => void;
 
   // Chat
@@ -263,7 +266,16 @@ export const RecruitmentProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const [interviews, setInterviews] = useState<ScheduledInterview[]>([]);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
 
+  const [settings, setSettings] = useState<AppSettings>({
+    companyName: 'Uniguard Security Services UK Ltd',
+    companyNumber: '09823412',
+    siaAcsApproved: true,
+  });
+
   const prevStageRef = React.useRef<Record<string, string>>({});
+  // Only write a status to Supabase when it actually changed — stops the
+  // every-refetch write storm that echoed back as duplicate update toasts.
+  const lastSyncedStatusRef = React.useRef<Record<string, string>>({});
   const publicUserRef = React.useRef(publicUser);
   useEffect(() => { publicUserRef.current = publicUser; }, [publicUser]);
 
@@ -285,8 +297,42 @@ export const RecruitmentProvider: React.FC<{ children: React.ReactNode }> = ({ c
     durationMinutes: row.duration_minutes ?? 45,
     location: row.location || 'Video Call (link to follow)',
     notes: row.notes || undefined,
+    rating: row.rating ?? undefined,
     status: row.status || 'scheduled',
     completed: !!row.completed,
+  });
+
+  const supabaseRowToEmployee = (row: any): Employee => ({
+    id: row.id,
+    applicantId: row.applicant_id || '',
+    employeeId: row.employee_id,
+    fullName: row.full_name,
+    email: row.email,
+    phone: row.phone,
+    roleTitle: row.role_title,
+    siaLicenceNo: row.sia_licence_no,
+    siaLicenceSector: row.sia_licence_sector,
+    siaLicenceExpiry: row.sia_licence_expiry,
+    hiredDate: row.hired_date,
+    assignedSite: row.assigned_site,
+    hourlyRate: Number(row.hourly_rate ?? 0),
+    status: ['active', 'on_assignment', 'offboarding'].includes(row.status) ? row.status : 'active',
+  } as Employee);
+
+  const mergeEmployees = (incoming: Employee[]) => {
+    setEmployees(prev => {
+      const incomingIds = new Set(incoming.map(e => e.id));
+      const kept = prev.filter(e => e.id.startsWith('emp-') && !incomingIds.has(e.id));
+      const byId = new Map(kept.map(e => [e.id, e]));
+      incoming.forEach(e => byId.set(e.id, e));
+      return [...byId.values()];
+    });
+  };
+
+  const supabaseRowToSettings = (row: any): AppSettings => ({
+    companyName: row.company_name || 'Uniguard Security Services UK Ltd',
+    companyNumber: row.company_number || '',
+    siaAcsApproved: !!row.sia_acs_approved,
   });
 
   // Reconcile: server rows win for their own ids; db rows missing from the
@@ -328,9 +374,18 @@ export const RecruitmentProvider: React.FC<{ children: React.ReactNode }> = ({ c
         supabase.from('interviews').select('*'),
         supabase.from('jobs').select('*').order('created_at', { ascending: false }),
       ]);
-      if (apps.data) reconcileApplicants(apps.data.map(supabaseRowToApplicant));
+      if (apps.data) {
+        apps.data.forEach((r: any) => { prevStageRef.current[r.id] = r.status; });
+        reconcileApplicants(apps.data.map(supabaseRowToApplicant));
+      }
       if (jobRows.data) mergeJobs(jobRows.data.map(supabaseRowToJob));
       if (msgs.data) mergeMessages(msgs.data.map(supabaseRowToMessage));
+      // Employees + settings live in a later migration — never let a missing
+      // table take down the core pipeline sync.
+      supabase.from('employees').select('*').order('created_at', { ascending: false })
+        .then(({ data }) => { if (data) mergeEmployees(data.map(supabaseRowToEmployee)); }, () => {});
+      supabase.from('settings').select('*').limit(1)
+        .then(({ data }) => { if (data && data[0]) setSettings(supabaseRowToSettings(data[0])); }, () => {});
       if (ivs.data) {
         const incoming = ivs.data.map(supabaseRowToInterview);
         setInterviews(prev => {
@@ -341,7 +396,8 @@ export const RecruitmentProvider: React.FC<{ children: React.ReactNode }> = ({ c
           return [...byId.values()];
         });
         
-        // Ensure applicants have their interview attached
+        // Ensure applicants have their interview attached (rating/notes now
+        // come from the persisted row so completed interviews survive refresh)
         setApplicants(prevApps => prevApps.map(app => {
           const matchingIv = incoming.find(i => i.applicationId === app.id);
           if (matchingIv) {
@@ -357,7 +413,7 @@ export const RecruitmentProvider: React.FC<{ children: React.ReactNode }> = ({ c
                 interviewType: matchingIv.location.toLowerCase().includes('video') ? 'video' : 'in_person',
                 completed: matchingIv.completed,
                 notes: matchingIv.notes,
-                rating: 0
+                rating: matchingIv.rating ?? 0
               }
             };
           }
@@ -452,6 +508,31 @@ export const RecruitmentProvider: React.FC<{ children: React.ReactNode }> = ({ c
         .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'jobs' }, (payload) => {
           const old = payload.old as any;
           setJobs(prev => prev.filter(j => j.id !== old.id));
+        })
+        .subscribe(),
+
+      // Live: employees roster
+      client
+        .channel('employees-live')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'employees' }, (payload) => {
+          const e = supabaseRowToEmployee(payload.new as any);
+          setEmployees(prev => prev.some(x => x.id === e.id) ? prev : [e, ...prev]);
+        })
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'employees' }, (payload) => {
+          const e = supabaseRowToEmployee(payload.new as any);
+          setEmployees(prev => prev.map(x => x.id === e.id ? e : x));
+        })
+        .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'employees' }, (payload) => {
+          const old = payload.old as any;
+          setEmployees(prev => prev.filter(x => x.id !== old.id));
+        })
+        .subscribe(),
+
+      // Live: company settings
+      client
+        .channel('settings-live')
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'settings' }, (payload) => {
+          setSettings(supabaseRowToSettings(payload.new as any));
         })
         .subscribe(),
     ];
@@ -621,13 +702,18 @@ export const RecruitmentProvider: React.FC<{ children: React.ReactNode }> = ({ c
     }
   };
 
-  // Keep Supabase status in sync with admin pipeline stage changes
+  // Keep Supabase status in sync with admin pipeline stage changes —
+  // only write when the status actually changed (prevents write storms that
+  // echoed back as duplicate realtime update toasts).
   useEffect(() => {
     if (supabaseIdsRef.current.size === 0 || !supabase) return;
     const client = supabase;
     applicants.forEach(a => {
-      if (supabaseIdsRef.current.has(a.id)) {
-        client.from('applications').update({ status: a.currentStage }).eq('id', a.id).then(() => {});
+      if (supabaseIdsRef.current.has(a.id) && lastSyncedStatusRef.current[a.id] !== a.currentStage) {
+        lastSyncedStatusRef.current[a.id] = a.currentStage;
+        client.from('applications').update({ status: a.currentStage }).eq('id', a.id).then(({ error }) => {
+          if (error) delete lastSyncedStatusRef.current[a.id];
+        });
       }
     });
   }, [applicants]);
@@ -812,7 +898,15 @@ export const RecruitmentProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
   const showToast = (title: string, message?: string, type: Toast['type'] = 'info') => {
     const id = Math.random().toString(36).substring(2, 9);
-    setToasts(prev => [...prev, { id, title, message, type }]);
+    // Dedupe: identical toasts (from realtime echoes, refetches, double clicks)
+    // must not stack up — replace the existing one instead.
+    setToasts(prev => {
+      const dup = prev.find(t => t.title === title && t.message === message && t.type === type);
+      if (dup) {
+        return prev.map(t => t.id === dup.id ? { ...t, id } : t);
+      }
+      return [...prev, { id, title, message, type }];
+    });
     setTimeout(() => {
       removeToast(id);
     }, 4000);
@@ -889,8 +983,14 @@ export const RecruitmentProvider: React.FC<{ children: React.ReactNode }> = ({ c
     showToast('Check Updated', `Status set to ${status.toUpperCase()}`, status === 'approved' ? 'success' : status === 'rejected' ? 'error' : 'info');
   };
 
-  // 2. Stage updates
+  // 2. Stage updates (persisted — survives refresh/realtime reconcile)
   const updateApplicantStage = (applicantId: string, stage: ApplicationStage) => {
+    if (supabaseIdsRef.current.has(applicantId) && supabase) {
+      lastSyncedStatusRef.current[applicantId] = stage;
+      supabase.from('applications').update({ status: stage }).eq('id', applicantId).then(({ error }) => {
+        if (error) delete lastSyncedStatusRef.current[applicantId];
+      });
+    }
     setApplicants(prev => prev.map(applicant => {
       if (applicant.id !== applicantId) return applicant;
       logActivity(applicant.id, applicant.fullName, `Moved stage to ${stage.replace('_', ' ').toUpperCase()}`);
@@ -950,8 +1050,33 @@ export const RecruitmentProvider: React.FC<{ children: React.ReactNode }> = ({ c
     showToast('Interview Scheduled', `Confirmed for ${interviewData.scheduledDate} at ${interviewData.scheduledTime}`, 'success');
   };
 
-  // 4. Complete Interview
+  // 4. Complete Interview (persisted — the completed flag + rating/notes live on
+  // the interviews row so refetches can never flip the card back to Pass/Fail)
   const completeInterview = (applicantId: string, notes: string, rating: number, passed: boolean) => {
+    const isDbRow = supabaseIdsRef.current.has(applicantId);
+
+    if (isDbRow && supabase) {
+      const nextStage = passed ? 'vetting_in_progress' : 'rejected';
+      supabase.from('interviews')
+        .update({ completed: true, status: 'completed', notes: notes || null, rating: rating || null })
+        .eq('application_id', applicantId)
+        .select()
+        .then(({ data }) => {
+          if (data && data[0]) {
+            const iv = supabaseRowToInterview(data[0]);
+            setInterviews(prev => prev.map(x => x.id === iv.id ? iv : x));
+          }
+        });
+      lastSyncedStatusRef.current[applicantId] = nextStage;
+      supabase.from('applications').update({ status: nextStage }).eq('id', applicantId).then(({ error }) => {
+        if (error) delete lastSyncedStatusRef.current[applicantId];
+      });
+    } else {
+      setInterviews(prev => prev.map(iv => iv.applicationId === applicantId
+        ? { ...iv, completed: true, status: 'completed', notes: notes || iv.notes }
+        : iv));
+    }
+
     setApplicants(prev => prev.map(applicant => {
       if (applicant.id !== applicantId) return applicant;
 
@@ -1029,6 +1154,39 @@ export const RecruitmentProvider: React.FC<{ children: React.ReactNode }> = ({ c
     };
 
     setEmployees(prev => [newEmployee, ...prev]);
+
+    // Persist to Supabase so the roster survives refresh on any device
+    if (supabase) {
+      const isDbRow = supabaseIdsRef.current.has(applicantId);
+      supabase.from('employees').insert({
+        applicant_id: isDbRow ? applicantId : null,
+        employee_id: newEmpId,
+        full_name: applicant.fullName,
+        email: applicant.email,
+        phone: applicant.phone,
+        role_title: applicant.appliedJobTitle,
+        sia_licence_no: applicant.siaLicenceNo,
+        sia_licence_sector: applicant.siaLicenceSector,
+        sia_licence_expiry: applicant.siaLicenceExpiry,
+        hired_date: newEmployee.hiredDate,
+        assigned_site: newEmployee.assignedSite,
+        hourly_rate: newEmployee.hourlyRate,
+        status: 'active',
+      }).select().then(({ data }) => {
+        if (data && data[0]) {
+          const row = data[0];
+          setEmployees(prev => prev.map(e => e.id === newEmployee.id
+            ? supabaseRowToEmployee(row)
+            : e));
+        }
+      });
+      if (isDbRow) {
+        lastSyncedStatusRef.current[applicantId] = 'hired';
+        supabase.from('applications').update({ status: 'hired' }).eq('id', applicantId).then(({ error }) => {
+          if (error) delete lastSyncedStatusRef.current[applicantId];
+        });
+      }
+    }
 
     setApplicants(prev => prev.map(a => {
       if (a.id !== applicantId) return a;
@@ -1144,6 +1302,28 @@ export const RecruitmentProvider: React.FC<{ children: React.ReactNode }> = ({ c
     showToast('Job Deleted', `"${job.title}" removed from all dashboards.`, 'success');
   };
 
+  // 7c. Save company settings (persisted to Supabase, single row id=1)
+  const saveSettings = async (next: AppSettings) => {
+    setSettings(next);
+    if (!supabase) {
+      showToast('Settings Saved', 'UK security company profile & vetting rules updated.', 'success');
+      return;
+    }
+    const { error } = await supabase.from('settings').upsert({
+      id: 1,
+      company_name: next.companyName,
+      company_number: next.companyNumber,
+      sia_acs_approved: next.siaAcsApproved,
+      updated_at: new Date().toISOString(),
+    });
+    if (error) {
+      console.error('Settings save failed:', error.message);
+      showToast('Settings Save Failed', 'Could not sync settings to the server.', 'error');
+      return;
+    }
+    showToast('Settings Saved', 'UK security company profile & vetting rules updated.', 'success');
+  };
+
   // 8. Add Applicant
   const addApplicant = (applicantData: Partial<Applicant>) => {
     const newId = `app-${Date.now()}`;
@@ -1211,6 +1391,8 @@ export const RecruitmentProvider: React.FC<{ children: React.ReactNode }> = ({ c
       createJob,
       updateJob,
       deleteJob,
+      saveSettings,
+      settings,
       addApplicant,
       sendMessage,
       editMessage,

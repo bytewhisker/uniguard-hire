@@ -3,14 +3,15 @@ import { useRecruitment } from '../../context/RecruitmentContext';
 import { Settings as SettingsIcon, ShieldCheck, Building } from 'lucide-react';
 
 export const SettingsView: React.FC = () => {
-  const { showToast } = useRecruitment();
+  const { showToast, settings, saveSettings } = useRecruitment();
 
-  const [companyName, setCompanyName] = useState('Uniguard Security Services UK Ltd');
-  const [siaAcsApproved, setSiaAcsApproved] = useState(true);
-  const [companyNumber, setCompanyNumber] = useState('09823412');
+  const [companyName, setCompanyName] = useState(settings.companyName);
+  const [siaAcsApproved, setSiaAcsApproved] = useState(settings.siaAcsApproved);
+  const [companyNumber, setCompanyNumber] = useState(settings.companyNumber);
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
+    saveSettings({ companyName, companyNumber, siaAcsApproved });
     showToast('Settings Saved', 'UK security company profile & vetting rules updated.', 'success');
   };
 

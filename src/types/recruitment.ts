@@ -139,8 +139,15 @@ export interface ScheduledInterview {
   durationMinutes: number;
   location: string;
   notes?: string;
+  rating?: number;
   status: 'scheduled' | 'completed' | 'cancelled';
   completed: boolean;
+}
+
+export interface AppSettings {
+  companyName: string;
+  companyNumber: string;
+  siaAcsApproved: boolean;
 }
 
 export type ActivePage = 
