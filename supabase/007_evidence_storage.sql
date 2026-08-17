@@ -13,9 +13,15 @@
 -- notice otherwise — in that case create the two policies via the Storage
 -- UI (dashboard → Storage → bucket `evidence` → Policies → New policy,
 -- target `authenticated`, expression:
---   (storage.foldername(name))[1] = auth.uid()::text OR public.is_admin()
+--   (storage.foldername(name))[1] = auth.uid()::text
+--   OR (storage.foldername(name))[2] = auth.uid()::text
+--   OR public.is_admin()
 -- one for read, one for insert).
 -- ============================================================================
+-- IMPORTANT: upload paths must put the user's id FIRST (`{uid}/file`) — the
+-- client now uploads to `{user.id}/{file}` (no bucket-name prefix), which
+-- satisfies `[1] = auth.uid()`. The `[2]` clause keeps legacy
+-- `evidence/{uid}/file` paths working too.
 insert into storage.buckets (id, name, public)
 values ('evidence', 'evidence', false)
 on conflict (id) do update set public = false;
@@ -67,7 +73,11 @@ begin
              on storage.objects for insert to authenticated
              with check (
                bucket_id = ''evidence''
-               and ((storage.foldername(name))[1] = auth.uid()::text or public.is_admin())
+               and (
+                 (storage.foldername(name))[1] = auth.uid()::text
+                 or (storage.foldername(name))[2] = auth.uid()::text
+                 or public.is_admin()
+               )
              )';
 
   execute 'drop policy if exists "evidence select own or admin" on storage.objects';
@@ -75,7 +85,11 @@ begin
              on storage.objects for select to authenticated
              using (
                bucket_id = ''evidence''
-               and ((storage.foldername(name))[1] = auth.uid()::text or public.is_admin())
+               and (
+                 (storage.foldername(name))[1] = auth.uid()::text
+                 or (storage.foldername(name))[2] = auth.uid()::text
+                 or public.is_admin()
+               )
              )';
 
   execute 'reset role';

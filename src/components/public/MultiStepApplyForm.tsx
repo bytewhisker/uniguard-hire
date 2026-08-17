@@ -291,7 +291,7 @@ export const MultiStepApplyForm: React.FC = () => {
           if (!a.file) { uploaded.push({ ...a, file: undefined }); continue; }
           const compressed = await compressEvidence(a.file);
           const ext = compressed.name.match(/\.[^.]+$/)?.[0] || '.pdf';
-          const path = `evidence/${user.id}/${a.id}-${Date.now()}${ext}`;
+          const path = `${user.id}/${a.id}-${Date.now()}${ext}`;
           const { error: upErr } = await supabase.storage.from('evidence').upload(path, compressed, { cacheControl: '3600', upsert: false });
           if (upErr) throw new Error(`Evidence upload failed: ${upErr.message}`);
           const { data } = supabase.storage.from('evidence').getPublicUrl(path);
