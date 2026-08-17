@@ -898,8 +898,37 @@ export const RecruitmentProvider: React.FC<{ children: React.ReactNode }> = ({ c
     }));
   };
 
-  // 3. Schedule Interview
+  // 3. Schedule Interview (persisted — local-only rows never survive a refresh)
   const scheduleInterview = (applicantId: string, interviewData: Omit<InterviewInfo, 'id'>) => {
+    const scheduledAt = new Date(`${interviewData.scheduledDate}T${interviewData.scheduledTime}:00`).toISOString();
+    const isDbRow = supabaseIdsRef.current.has(applicantId);
+
+    if (isDbRow && supabase) {
+      supabase.from('interviews').insert({
+        application_id: applicantId,
+        scheduled_at: scheduledAt,
+        duration_minutes: 45,
+        location: interviewData.locationOrLink,
+        notes: interviewData.notes,
+      }).select().then(({ data }) => {
+        if (data && data[0]) {
+          const iv = supabaseRowToInterview(data[0]);
+          setInterviews(prev => [...prev.filter(x => x.applicationId !== applicantId), iv]);
+        }
+      });
+    } else {
+      setInterviews(prev => [...prev.filter(x => x.applicationId !== applicantId), {
+        id: `local-int-${Date.now()}`,
+        applicationId: applicantId,
+        scheduledAt,
+        durationMinutes: 45,
+        location: interviewData.locationOrLink,
+        notes: interviewData.notes,
+        status: 'scheduled',
+        completed: false,
+      }]);
+    }
+
     setApplicants(prev => prev.map(applicant => {
       if (applicant.id !== applicantId) return applicant;
 
