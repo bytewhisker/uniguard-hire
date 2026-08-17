@@ -1,4 +1,4 @@
-﻿import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import confetti from 'canvas-confetti';
 import type { 
   Applicant, 
@@ -125,6 +125,14 @@ const PAGE_PATHS: Record<string, string> = {
   confirm: '/confirm',
   'forgot-password': '/forgot-password',
   'reset-password': '/reset-password',
+  dashboard: '/admin',
+  jobs: '/admin/jobs',
+  applicants: '/admin/applicants',
+  interviews: '/admin/interviews',
+  employees: '/admin/employees',
+  chat: '/admin/chat',
+  reports: '/admin/reports',
+  settings: '/admin/settings',
 };
 
 const PATH_PAGES: Record<string, string> = {
@@ -137,6 +145,13 @@ const PATH_PAGES: Record<string, string> = {
   '/forgot-password': 'forgot-password',
   '/reset-password': 'reset-password',
   '/admin': 'dashboard',
+  '/admin/jobs': 'jobs',
+  '/admin/applicants': 'applicants',
+  '/admin/interviews': 'interviews',
+  '/admin/employees': 'employees',
+  '/admin/chat': 'chat',
+  '/admin/reports': 'reports',
+  '/admin/settings': 'settings',
 };
 
 const pageFromPath = (path: string): ActivePage => (PATH_PAGES[path] || 'landing') as ActivePage;
@@ -325,6 +340,29 @@ export const RecruitmentProvider: React.FC<{ children: React.ReactNode }> = ({ c
           incoming.forEach(i => byId.set(i.id, i));
           return [...byId.values()];
         });
+        
+        // Ensure applicants have their interview attached
+        setApplicants(prevApps => prevApps.map(app => {
+          const matchingIv = incoming.find(i => i.applicationId === app.id);
+          if (matchingIv) {
+            const d = new Date(matchingIv.scheduledAt);
+            return {
+              ...app,
+              interview: {
+                id: matchingIv.id,
+                scheduledDate: d.toISOString().slice(0, 10),
+                scheduledTime: d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                interviewerName: 'Uniguard Recruitment',
+                locationOrLink: matchingIv.location,
+                interviewType: matchingIv.location.toLowerCase().includes('video') ? 'video' : 'in_person',
+                completed: matchingIv.completed,
+                notes: matchingIv.notes,
+                rating: 0
+              }
+            };
+          }
+          return app;
+        }));
       }
     } catch {
       // offline — keep local state
@@ -602,36 +640,40 @@ export const RecruitmentProvider: React.FC<{ children: React.ReactNode }> = ({ c
       if (!supabaseUser) {
         setPublicUser(null);
         setIsAuthenticated(false);
-        return;
+        return false;
       }
       setPublicUser({
         name: (supabaseUser.user_metadata?.full_name as string) || supabaseUser.email || '',
         email: supabaseUser.email || '',
       });
       const { data: profile } = await client.from('profiles').select('is_admin').eq('id', supabaseUser.id).maybeSingle();
-      setIsAuthenticated(!!profile?.is_admin);
+      const isAdmin = !!profile?.is_admin;
+      setIsAuthenticated(isAdmin);
+      return isAdmin;
     };
 
-    client.auth.getSession().then(({ data: { session } }) => {
+    client.auth.getSession().then(async ({ data: { session } }) => {
       if (session?.user) {
-        applySessionUser(session.user);
+        const isAdmin = await applySessionUser(session.user);
         // Just returned from Google/email OAuth (tokens in the URL)?
         // supabase-js's SIGNED_IN event can fire before this effect subscribes,
         // so navigate explicitly instead of relying on it.
         const path = window.location.pathname;
         if (isOAuthRedirect && path !== '/confirm' && path !== '/reset-password') {
-          setActivePage('user-dashboard');
+          setActivePage(isAdmin ? 'dashboard' : 'user-dashboard');
         }
       }
     });
 
-    const { data: { subscription } } = client.auth.onAuthStateChange((event, session) => {
-      applySessionUser(session?.user ?? null);
+    const { data: { subscription } } = client.auth.onAuthStateChange(async (event, session) => {
+      const isAdmin = await applySessionUser(session?.user ?? null);
       // Fresh sign-in → dashboard, unless we're mid-email-confirmation or
       // mid-password-reset, where the session is only the OTP session.
       if (event === 'SIGNED_IN' && session?.user) {
         const path = window.location.pathname;
-        if (path !== '/confirm' && path !== '/reset-password') setActivePage('user-dashboard');
+        if (path !== '/confirm' && path !== '/reset-password') {
+          setActivePage(isAdmin ? 'dashboard' : 'user-dashboard');
+        }
       }
     });
 
