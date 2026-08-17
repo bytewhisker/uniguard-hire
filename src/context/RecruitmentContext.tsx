@@ -74,6 +74,7 @@ interface RecruitmentContextType {
   completeInterview: (applicantId: string, notes: string, rating: number, passed: boolean) => void;
   sendContract: (applicantId: string) => void;
   convertToEmployee: (applicantId: string) => void;
+  fireEmployee: (applicantId: string) => void;
   createJob: (jobData: Omit<Job, 'id' | 'createdDate' | 'applicantsCount'>) => Promise<void>;
   updateJob: (id: string, jobData: Omit<Job, 'id' | 'createdDate' | 'applicantsCount'>) => Promise<void>;
   deleteJob: (id: string) => Promise<void>;
@@ -358,7 +359,17 @@ export const RecruitmentProvider: React.FC<{ children: React.ReactNode }> = ({ c
         return true;
       });
       const byId = new Map(kept.map(a => [a.id, a]));
-      incoming.forEach(a => byId.set(a.id, a));
+      incoming.forEach(a => {
+        const local = prev.find(x => x.id === a.id);
+        // A stale refetch (in-flight when an admin action happened) must not
+        // clobber the stage we just set — lastSyncedStatus holds our intent
+        // until the DB write lands.
+        if (local && lastSyncedStatusRef.current[a.id] && lastSyncedStatusRef.current[a.id] !== a.currentStage) {
+          byId.set(a.id, { ...a, currentStage: lastSyncedStatusRef.current[a.id] as ApplicationStage });
+        } else {
+          byId.set(a.id, a);
+        }
+      });
       return [...byId.values()];
     });
   };
@@ -447,9 +458,14 @@ export const RecruitmentProvider: React.FC<{ children: React.ReactNode }> = ({ c
         .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'applications' }, (payload) => {
           const row = payload.new as any;
           if (!supabaseIdsRef.current.has(row.id)) return;
-          setApplicants(prev => prev.map(a => a.id === row.id && VALID_STAGES.includes(row.status)
-            ? { ...a, currentStage: row.status, fullName: row.full_name || a.fullName, appliedJobTitle: row.applied_job || a.appliedJobTitle }
-            : a));
+          if (VALID_STAGES.includes(row.status)) {
+            // The row's status is now known-good on the server (covers our own
+            // write echoes and changes made from another device).
+            lastSyncedStatusRef.current[row.id] = row.status;
+            setApplicants(prev => prev.map(a => a.id === row.id
+              ? { ...a, currentStage: row.status, fullName: row.full_name || a.fullName, appliedJobTitle: row.applied_job || a.appliedJobTitle }
+              : a));
+          }
           // Notify the candidate in real time when their status changes
           if (publicUserRef.current && row.applicant_email === publicUserRef.current.email && VALID_STAGES.includes(row.status)) {
             const prevStatus = prevStageRef.current[row.id];
@@ -651,6 +667,14 @@ export const RecruitmentProvider: React.FC<{ children: React.ReactNode }> = ({ c
     interviews.filter(i => i.applicationId === applicationId).sort((a, b) => a.scheduledAt.localeCompare(b.scheduledAt));
 
   const scheduleInterviewLive = (applicantId: string, scheduledAt: string, durationMinutes: number, location: string, notes?: string) => {
+    const existing = interviews.find(i => i.applicationId === applicantId);
+    if (existing) {
+      const d = new Date(existing.scheduledAt);
+      showToast('Interview Already Booked',
+        `This applicant already has an interview on ${d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })} at ${d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}.`,
+        'warning');
+      return;
+    }
     const isDbRow = supabaseIdsRef.current.has(applicantId);
     const upsert = (iv: ScheduledInterview) => {
       setInterviews(prev => [...prev.filter(x => x.applicationId !== applicantId), iv]);
@@ -1000,6 +1024,14 @@ export const RecruitmentProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
   // 3. Schedule Interview (persisted — local-only rows never survive a refresh)
   const scheduleInterview = (applicantId: string, interviewData: Omit<InterviewInfo, 'id'>) => {
+    const existing = interviews.find(i => i.applicationId === applicantId);
+    if (existing) {
+      const d = new Date(existing.scheduledAt);
+      showToast('Interview Already Booked',
+        `This applicant already has an interview on ${d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })} at ${d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}.`,
+        'warning');
+      return;
+    }
     const scheduledAt = new Date(`${interviewData.scheduledDate}T${interviewData.scheduledTime}:00`).toISOString();
     const isDbRow = supabaseIdsRef.current.has(applicantId);
 
@@ -1129,10 +1161,20 @@ export const RecruitmentProvider: React.FC<{ children: React.ReactNode }> = ({ c
     showToast('Contract Dispatched ðŸ“„', 'Employment contract sent to applicant via e-signature link.', 'success');
   };
 
-  // 6. Convert to Employee (Hire!)
+  // 6. Convert to Employee (Hire!) — guarded so the same applicant can never
+  // be hired twice, even with a double click or a stale UI
   const convertToEmployee = (applicantId: string) => {
     const applicant = applicants.find(a => a.id === applicantId);
     if (!applicant) return;
+
+    if (applicant.currentStage === 'hired') {
+      showToast('Already Hired', `${applicant.fullName} is already on the roster.`, 'info');
+      return;
+    }
+    if (employees.some(e => e.applicantId === applicantId)) {
+      showToast('Already Hired', `${applicant.fullName} is already on the roster.`, 'info');
+      return;
+    }
 
     const newEmpId = `UG-${Math.floor(1000 + Math.random() * 9000)}`;
 
@@ -1208,6 +1250,39 @@ export const RecruitmentProvider: React.FC<{ children: React.ReactNode }> = ({ c
     });
 
     showToast('Candidate Hired! ðŸŽ‰', `${applicant.fullName} is now an active Employee (${newEmpId}).`, 'success');
+  };
+
+  // 6b. Undo hire — remove from the roster and move the applicant back to
+  // contract sent, synced to Supabase
+  const fireEmployee = (applicantId: string) => {
+    const employee = employees.find(e => e.applicantId === applicantId);
+    if (!employee) return;
+
+    setEmployees(prev => prev.filter(e => e.applicantId !== applicantId));
+
+    if (supabase) {
+      if (!employee.id.startsWith('emp-')) {
+        supabase.from('employees').delete().eq('id', employee.id).then(({ error }) => {
+          if (error) {
+            console.error('Employee remove failed:', error.message);
+            setEmployees(prev => prev.some(e => e.id === employee.id) ? prev : [employee, ...prev]);
+          }
+        });
+      }
+      if (supabaseIdsRef.current.has(applicantId)) {
+        lastSyncedStatusRef.current[applicantId] = 'contract_sent';
+        supabase.from('applications').update({ status: 'contract_sent' }).eq('id', applicantId).then(({ error }) => {
+          if (error) delete lastSyncedStatusRef.current[applicantId];
+        });
+      }
+    }
+
+    setApplicants(prev => prev.map(a => a.id === applicantId
+      ? { ...a, currentStage: 'contract_sent', employeeId: undefined, hiredDate: undefined }
+      : a));
+
+    logActivity(applicantId, employee.fullName, `Employee ${employee.employeeId} removed from roster`);
+    showToast('Hire Reverted', `${employee.fullName} (${employee.employeeId}) removed from the roster.`, 'info');
   };
 
 // 7. Create Job (persisted to Supabase so candidates on any device see it)
@@ -1388,6 +1463,7 @@ export const RecruitmentProvider: React.FC<{ children: React.ReactNode }> = ({ c
       completeInterview,
       sendContract,
       convertToEmployee,
+      fireEmployee,
       createJob,
       updateJob,
       deleteJob,

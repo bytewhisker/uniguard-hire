@@ -15,7 +15,8 @@ import {
   Send, 
   UserCheck, 
   Download,
-  Star
+  Star,
+  Undo2
 } from 'lucide-react';
 import type { VettingCheckType, CheckStatus, ApplicationStage } from '../../types/recruitment';
 
@@ -26,6 +27,7 @@ export const ApplicantDrawer: React.FC = () => {
     updateCheckStatus, 
     sendContract, 
     convertToEmployee,
+    fireEmployee,
     updateApplicantStage,
     scheduleInterviewLive,
     showToast
@@ -189,6 +191,16 @@ export const ApplicantDrawer: React.FC = () => {
               >
                 <UserCheck className="w-3.5 h-3.5" />
                 <span>Mark Contract Signed (Convert to Employee)</span>
+              </button>
+            )}
+
+            {applicant.currentStage === 'hired' && (
+              <button
+                onClick={() => fireEmployee(applicant.id)}
+                className="px-4 py-1.5 rounded-xl bg-rose-950 hover:bg-rose-900 border border-rose-500/40 text-rose-300 font-bold text-xs flex items-center gap-2 transition-all"
+              >
+                <Undo2 className="w-3.5 h-3.5" />
+                <span>Undo Hire (Remove from Roster)</span>
               </button>
             )}
           </div>

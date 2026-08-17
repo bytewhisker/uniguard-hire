@@ -62,3 +62,8 @@ begin
 exception when duplicate_object then
   null;
 end $$;
+
+-- One employee per applicant — the DB-level backstop against double hiring
+create unique index if not exists employees_one_per_applicant
+  on public.employees (applicant_id)
+  where applicant_id is not null;

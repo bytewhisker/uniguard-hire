@@ -3,7 +3,7 @@ import { useRecruitment } from '../../context/RecruitmentContext';
 import { UserCheck, AlertTriangle, MapPin, Search } from 'lucide-react';
 
 export const EmployeesView: React.FC = () => {
-  const { employees, searchQuery, setSearchQuery } = useRecruitment();
+  const { employees, searchQuery, setSearchQuery, fireEmployee } = useRecruitment();
 
   const filteredEmployees = employees.filter(emp => 
     emp.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -107,6 +107,17 @@ export const EmployeesView: React.FC = () => {
                         {emp.status.replace('_', ' ')}
                       </span>
                     </td>
+
+                    {emp.applicantId && (
+                      <td className="p-4 text-right">
+                        <button
+                          onClick={() => fireEmployee(emp.applicantId)}
+                          className="px-2.5 py-1.5 rounded-lg bg-rose-950/60 hover:bg-rose-900 border border-rose-500/40 text-rose-300 text-[11px] font-semibold transition-colors"
+                        >
+                          Remove
+                        </button>
+                      </td>
+                    )}
                   </tr>
                 );
               })}
