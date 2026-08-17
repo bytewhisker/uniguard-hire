@@ -244,6 +244,11 @@ export const RecruitmentProvider: React.FC<{ children: React.ReactNode }> = ({ c
         uploadedAt: '',
         size: 'Evidence',
       }));
+    // Persisted vetting checks win; fall back to defaults when the column is
+    // empty (fresh rows / migration not run yet).
+    const storedChecks = Array.isArray(row.vetting_data) && row.vetting_data.length > 0
+      ? row.vetting_data
+      : undefined;
     return {
       id: row.id,
       fullName: row.full_name || 'New Applicant',
@@ -260,7 +265,20 @@ export const RecruitmentProvider: React.FC<{ children: React.ReactNode }> = ({ c
       appliedDate: (row.created_at || '').slice(0, 10),
       currentStage: VALID_STAGES.includes(row.status) ? row.status : 'applied',
       documents: docs,
-      vettingChecks: defaultChecks(row.id),
+      vettingChecks: storedChecks
+        ? (storedChecks as any[]).map((c, i) => ({
+            id: c.id || `chk-${row.id}-${i}`,
+            type: c.type as VettingCheckType,
+            title: c.title || '',
+            description: c.description || '',
+            isRequired: !!c.isRequired,
+            status: (['approved', 'rejected', 'pending'] as CheckStatus[]).includes(c.status) ? c.status : 'pending',
+            notes: c.notes || '',
+            externalUrl: c.externalUrl || '#',
+            verifiedBy: c.verifiedBy,
+            verifiedAt: c.verifiedAt,
+          }))
+        : defaultChecks(row.id),
     } as Applicant;
   };
 
@@ -397,6 +415,24 @@ export const RecruitmentProvider: React.FC<{ children: React.ReactNode }> = ({ c
         .then(({ data }) => { if (data) mergeEmployees(data.map(supabaseRowToEmployee)); }, () => {});
       supabase.from('settings').select('*').limit(1)
         .then(({ data }) => { if (data && data[0]) setSettings(supabaseRowToSettings(data[0])); }, () => {});
+      supabase.from('activity_logs').select('*').order('created_at', { ascending: false }).limit(100)
+        .then(({ data }) => {
+          if (data && data.length > 0) {
+            const incoming = data.map((r: any): ActivityLog => ({
+              id: r.id,
+              applicantId: r.applicant_id || '',
+              applicantName: r.applicant_name,
+              action: r.action,
+              timestamp: new Date(r.created_at).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }),
+              user: r.user,
+            }));
+            setActivityLogs(prev => {
+              const incomingIds = new Set(incoming.map(l => l.id));
+              const kept = prev.filter(l => l.id.startsWith('act-') && !incomingIds.has(l.id));
+              return [...incoming, ...kept].slice(0, 100);
+            });
+          }
+        }, () => {});
       if (ivs.data) {
         const incoming = ivs.data.map(supabaseRowToInterview);
         setInterviews(prev => {
@@ -465,6 +501,12 @@ export const RecruitmentProvider: React.FC<{ children: React.ReactNode }> = ({ c
             setApplicants(prev => prev.map(a => a.id === row.id
               ? { ...a, currentStage: row.status, fullName: row.full_name || a.fullName, appliedJobTitle: row.applied_job || a.appliedJobTitle }
               : a));
+          }
+          if (Array.isArray(row.vetting_data) && row.vetting_data.length > 0) {
+            setApplicants(prev => prev.map(a => {
+              if (a.id !== row.id) return a;
+              return { ...a, vettingChecks: row.vetting_data as VettingCheckItem[] };
+            }));
           }
           // Notify the candidate in real time when their status changes
           if (publicUserRef.current && row.applicant_email === publicUserRef.current.email && VALID_STAGES.includes(row.status)) {
@@ -549,6 +591,25 @@ export const RecruitmentProvider: React.FC<{ children: React.ReactNode }> = ({ c
         .channel('settings-live')
         .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'settings' }, (payload) => {
           setSettings(supabaseRowToSettings(payload.new as any));
+        })
+        .subscribe(),
+
+      // Live: activity log (audit trail)
+      client
+        .channel('activity-live')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'activity_logs' }, (payload) => {
+          const r = payload.new as any;
+          setActivityLogs(prev => {
+            const log: ActivityLog = {
+              id: r.id,
+              applicantId: r.applicant_id || '',
+              applicantName: r.applicant_name,
+              action: r.action,
+              timestamp: new Date(r.created_at).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }),
+              user: r.user,
+            };
+            return prev.some(l => l.id === r.id) ? prev : [log, ...prev].slice(0, 100);
+          });
         })
         .subscribe(),
     ];
@@ -950,59 +1011,86 @@ export const RecruitmentProvider: React.FC<{ children: React.ReactNode }> = ({ c
       user: 'Admin User'
     };
     setActivityLogs(prev => [newLog, ...prev]);
+    // Persist to the audit trail (fire-and-forget; local-first display)
+    if (supabase) {
+      supabase.from('activity_logs').insert({
+        applicant_id: supabaseIdsRef.current.has(applicantId) ? applicantId : null,
+        applicant_name: applicantName,
+        action,
+        user: 'Admin User',
+      }).select().then(({ data }) => {
+        if (data && data[0]) {
+          const row = data[0];
+          setActivityLogs(prev => prev.map(l => l.id === newLog.id
+            ? { ...l, id: row.id, timestamp: new Date(row.created_at).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) }
+            : l));
+        }
+      }, () => {});
+    }
   };
 
-  // 1. Update Check Status & Notes
+  // 1. Update Check Status & Notes (persisted — the write happens outside the
+  // state updater so it always runs exactly once per click)
   const updateCheckStatus = (
     applicantId: string, 
     checkType: VettingCheckType, 
     status: CheckStatus, 
     notes?: string
   ) => {
-    setApplicants(prev => prev.map(applicant => {
-      if (applicant.id !== applicantId) return applicant;
+    const applicant = applicants.find(a => a.id === applicantId);
+    if (!applicant) return;
 
-      const now = new Date();
-      const formattedDate = `${now.toLocaleDateString('en-GB')} ${now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}`;
+    const now = new Date();
+    const formattedDate = `${now.toLocaleDateString('en-GB')} ${now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}`;
 
-      const updatedChecks = applicant.vettingChecks.map(check => {
-        if (check.type !== checkType) return check;
-        return {
-          ...check,
-          status,
-          notes: notes !== undefined ? notes : check.notes,
-          verifiedBy: status !== 'pending' ? 'Admin User' : undefined,
-          verifiedAt: status !== 'pending' ? formattedDate : undefined,
-        };
-      });
-
-      // Check if all REQUIRED checks are approved (Right to Work, SIA Licence, References)
-      const requiredChecks = updatedChecks.filter(c => c.isRequired);
-      const allRequiredApproved = requiredChecks.length > 0 && requiredChecks.every(c => c.status === 'approved');
-
-      let newStage = applicant.currentStage;
-      if (allRequiredApproved && (applicant.currentStage === 'vetting_in_progress' || applicant.currentStage === 'interview_completed' || applicant.currentStage === 'under_review')) {
-        newStage = 'ready_for_contract';
-        logActivity(applicant.id, applicant.fullName, 'All required vetting checks approved. Candidate is Ready for Contract!');
-        showToast('Ready for Contract ðŸŽ‰', `${applicant.fullName} has passed all required UK security checks!`, 'success');
-      }
-
-      const checkNameMap: Record<VettingCheckType, string> = {
-        right_to_work: 'Right to Work',
-        sia_licence: 'SIA Licence',
-        references: 'References',
-        credit_check: 'Credit Check',
-        companies_house: 'Companies House'
-      };
-
-      logActivity(applicant.id, applicant.fullName, `Updated ${checkNameMap[checkType]} to ${status.toUpperCase()}`);
-
+    const updatedChecks = applicant.vettingChecks.map(check => {
+      if (check.type !== checkType) return check;
       return {
-        ...applicant,
-        vettingChecks: updatedChecks,
-        currentStage: newStage
+        ...check,
+        status,
+        notes: notes !== undefined ? notes : check.notes,
+        verifiedBy: status !== 'pending' ? 'Admin User' : undefined,
+        verifiedAt: status !== 'pending' ? formattedDate : undefined,
       };
-    }));
+    });
+
+    // Check if all REQUIRED checks are approved (Right to Work, SIA Licence, References)
+    const requiredChecks = updatedChecks.filter(c => c.isRequired);
+    const allRequiredApproved = requiredChecks.length > 0 && requiredChecks.every(c => c.status === 'approved');
+
+    let newStage = applicant.currentStage;
+    if (allRequiredApproved && (applicant.currentStage === 'vetting_in_progress' || applicant.currentStage === 'interview_completed' || applicant.currentStage === 'under_review')) {
+      newStage = 'ready_for_contract';
+      logActivity(applicant.id, applicant.fullName, 'All required vetting checks approved. Candidate is Ready for Contract!');
+      showToast('Ready for Contract ðŸŽ‰', `${applicant.fullName} has passed all required UK security checks!`, 'success');
+    }
+
+    const checkNameMap: Record<VettingCheckType, string> = {
+      right_to_work: 'Right to Work',
+      sia_licence: 'SIA Licence',
+      references: 'References',
+      credit_check: 'Credit Check',
+      companies_house: 'Companies House'
+    };
+
+    logActivity(applicant.id, applicant.fullName, `Updated ${checkNameMap[checkType]} to ${status.toUpperCase()}`);
+
+    setApplicants(prev => prev.map(a => a.id === applicantId
+      ? { ...a, vettingChecks: updatedChecks, currentStage: newStage }
+      : a));
+
+    // Persist the full checklist so approvals survive refresh/reopen
+    if (supabaseIdsRef.current.has(applicantId) && supabase) {
+      supabase.from('applications')
+        .update({ vetting_data: updatedChecks })
+        .eq('id', applicantId)
+        .then(({ error }) => {
+          if (error) {
+            console.error('Vetting persist failed:', error.message);
+            showToast('Sync Failed', `Vetting status was not saved: ${error.message}`, 'error');
+          }
+        });
+    }
 
     showToast('Check Updated', `Status set to ${status.toUpperCase()}`, status === 'approved' ? 'success' : status === 'rejected' ? 'error' : 'info');
   };
@@ -1214,7 +1302,12 @@ export const RecruitmentProvider: React.FC<{ children: React.ReactNode }> = ({ c
         assigned_site: newEmployee.assignedSite,
         hourly_rate: newEmployee.hourlyRate,
         status: 'active',
-      }).select().then(({ data }) => {
+      }).select().then(({ data, error }) => {
+        if (error) {
+          console.error('Employee insert failed:', error.message);
+          showToast('Roster Sync Failed', `Employee not saved to backend: ${error.message}`, 'error');
+          return;
+        }
         if (data && data[0]) {
           const row = data[0];
           setEmployees(prev => prev.map(e => e.id === newEmployee.id
