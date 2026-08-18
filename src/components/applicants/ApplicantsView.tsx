@@ -4,7 +4,6 @@ import {
   Search, 
   UserPlus, 
   ShieldCheck, 
-  ChevronRight, 
   Inbox,
   CheckCircle2,
   AlertTriangle,

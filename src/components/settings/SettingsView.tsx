@@ -3,7 +3,7 @@ import { useRecruitment } from '../../context/RecruitmentContext';
 import { Settings as SettingsIcon, ShieldCheck, Building } from 'lucide-react';
 
 export const SettingsView: React.FC = () => {
-  const { showToast, settings, saveSettings } = useRecruitment();
+  const { settings, saveSettings } = useRecruitment();
 
   const [companyName, setCompanyName] = useState(settings.companyName);
   const [siaAcsApproved, setSiaAcsApproved] = useState(settings.siaAcsApproved);

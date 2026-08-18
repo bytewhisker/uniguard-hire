@@ -9,8 +9,6 @@ import {
   Lightbulb, 
   Menu,
   ShieldCheck,
-  CheckCircle2,
-  Calendar,
   MessageSquare,
   Clock,
   X
@@ -24,7 +22,7 @@ interface HeaderProps {
 }
 
 export const Header: React.FC<HeaderProps> = ({ onOpenCreateJob, onOpenAddApplicant, onOpenGuide, onOpenNav }) => {
-  const { activePage, applicants, activityLogs, messages, setActivePage, setSelectedApplicant } = useRecruitment();
+  const { activePage, applicants, activityLogs, messages, setActivePage } = useRecruitment();
   const [showQuickMenu, setShowQuickMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
 

@@ -8,7 +8,6 @@ import {
   ShieldCheck, 
   CheckCircle2, 
   XCircle, 
-  Clock, 
   FileText, 
   ExternalLink, 
   User, 
@@ -41,9 +40,9 @@ export const ApplicantDrawer: React.FC = () => {
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [draftDate, setDraftDate] = useState('');
   const [draftTime, setDraftTime] = useState('10:00');
-  const [draftDuration, setDraftDuration] = useState(45);
+  const [draftDuration] = useState(45);
   const [draftLocation, setDraftLocation] = useState('Video Call (link to follow)');
-  const [draftNotes, setDraftNotes] = useState('');
+  const [draftNotes] = useState('');
 
   if (!selectedApplicant) return null;
 
