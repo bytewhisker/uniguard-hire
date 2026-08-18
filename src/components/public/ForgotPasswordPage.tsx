@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useRecruitment } from '../../context/RecruitmentContext';
 import { Shield, MailCheck, ArrowRight } from 'lucide-react';
+import { SecurityCaptcha } from '../common/SecurityCaptcha';
 
 export const ForgotPasswordPage: React.FC = () => {
   const { requestPasswordReset, setActivePage } = useRecruitment();
@@ -8,6 +9,7 @@ export const ForgotPasswordPage: React.FC = () => {
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -118,9 +120,11 @@ export const ForgotPasswordPage: React.FC = () => {
               />
             </div>
 
+            <SecurityCaptcha onVerify={token => setCaptchaToken(token)} />
+
             <button
               type="submit"
-              disabled={busy}
+              disabled={busy || !captchaToken}
               className="w-full flex items-center justify-center gap-2 px-6 py-3.5 rounded-lg text-base font-bold text-white transition-all hover:shadow-lg active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
               style={{ backgroundColor: '#AF7C28' }}
             >

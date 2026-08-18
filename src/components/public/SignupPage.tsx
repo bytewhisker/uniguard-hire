@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useRecruitment } from '../../context/RecruitmentContext';
 import { Shield, ArrowRight, Eye, EyeOff, MailCheck } from 'lucide-react';
 import { GoogleIcon } from '../common/GoogleIcon';
+import { SecurityCaptcha } from '../common/SecurityCaptcha';
 
 export const SignupPage: React.FC = () => {
   const { publicSignup, googleLogin, setActivePage } = useRecruitment();
@@ -13,6 +14,7 @@ export const SignupPage: React.FC = () => {
   const [error, setError] = useState('');
   const [googleBusy, setGoogleBusy] = useState(false);
   const [pendingConfirm, setPendingConfirm] = useState<string | null>(null);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -193,9 +195,12 @@ export const SignupPage: React.FC = () => {
               />
             </div>
 
+            <SecurityCaptcha onVerify={token => setCaptchaToken(token)} />
+
             <button
               type="submit"
-              className="w-full flex items-center justify-center gap-2 px-6 py-3.5 rounded-lg text-base font-bold text-white transition-all hover:shadow-lg active:scale-[0.98]"
+              disabled={!captchaToken}
+              className="w-full flex items-center justify-center gap-2 px-6 py-3.5 rounded-lg text-base font-bold text-white transition-all hover:shadow-lg active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
               style={{ backgroundColor: '#AF7C28' }}
             >
               <span>Create Account</span>
