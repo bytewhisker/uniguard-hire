@@ -158,7 +158,22 @@ const PATH_PAGES: Record<string, string> = {
   '/admin/settings': 'settings',
 };
 
-const pageFromPath = (path: string): ActivePage => (PATH_PAGES[path] || 'landing') as ActivePage;
+const pageFromPath = (path: string): ActivePage => {
+  const search = window.location.search;
+  const hash = window.location.hash;
+  if (
+    path === '/reset-password' ||
+    search.includes('type=recovery') ||
+    hash.includes('type=recovery') ||
+    (search.includes('token_hash') && search.includes('recovery'))
+  ) {
+    return 'reset-password';
+  }
+  if (path === '/confirm' || search.includes('type=signup') || hash.includes('type=signup')) {
+    return 'confirm';
+  }
+  return (PATH_PAGES[path] || 'landing') as ActivePage;
+};
 
 export const RecruitmentProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [activePage, setActivePageState] = useState<ActivePage>(() => pageFromPath(window.location.pathname));
@@ -913,14 +928,18 @@ export const RecruitmentProvider: React.FC<{ children: React.ReactNode }> = ({ c
       return isAdmin;
     };
 
+    const isRecovery = () => {
+      const p = window.location.pathname;
+      const s = window.location.search;
+      const h = window.location.hash;
+      return p === '/reset-password' || s.includes('type=recovery') || h.includes('type=recovery');
+    };
+
     client.auth.getSession().then(async ({ data: { session } }) => {
       if (session?.user) {
         const isAdmin = await applySessionUser(session.user);
-        // Just returned from Google/email OAuth (tokens in the URL)?
-        // supabase-js's SIGNED_IN event can fire before this effect subscribes,
-        // so navigate explicitly instead of relying on it.
         const path = window.location.pathname;
-        if (isOAuthRedirect && path !== '/confirm' && path !== '/reset-password') {
+        if (isOAuthRedirect && path !== '/confirm' && !isRecovery()) {
           setActivePage(isAdmin ? 'dashboard' : 'user-dashboard');
         }
       }
@@ -928,11 +947,18 @@ export const RecruitmentProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
     const { data: { subscription } } = client.auth.onAuthStateChange(async (event, session) => {
       const isAdmin = await applySessionUser(session?.user ?? null);
+      if (event === 'PASSWORD_RECOVERY') {
+        setActivePageState('reset-password');
+        if (window.location.pathname !== '/reset-password') {
+          window.history.pushState({ page: 'reset-password' }, '', '/reset-password');
+        }
+        return;
+      }
       // Fresh sign-in → dashboard, unless we're mid-email-confirmation or
-      // mid-password-reset, where the session is only the OTP session.
+      // mid-password-reset, where the session is only the recovery OTP session.
       if (event === 'SIGNED_IN' && session?.user) {
         const path = window.location.pathname;
-        if (path !== '/confirm' && path !== '/reset-password') {
+        if (path !== '/confirm' && !isRecovery()) {
           setActivePage(isAdmin ? 'dashboard' : 'user-dashboard');
         }
       }
