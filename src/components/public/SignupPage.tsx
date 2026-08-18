@@ -25,8 +25,8 @@ export const SignupPage: React.FC = () => {
       setError('Passwords do not match.');
       return;
     }
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters.');
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters.');
       return;
     }
     const result = await publicSignup(name, email, password);
@@ -143,6 +143,7 @@ export const SignupPage: React.FC = () => {
                 value={name}
                 onChange={e => setName(e.target.value)}
                 placeholder="e.g. Alex Morgan"
+                autoComplete="name"
                 className="w-full px-4 py-3 rounded-lg border border-line text-primary placeholder:text-faint focus:outline-none focus:border-line-strong focus:ring-2 focus:ring-black/5 transition-all"
               />
             </div>
@@ -154,6 +155,7 @@ export const SignupPage: React.FC = () => {
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 placeholder="alex.morgan@example.co.uk"
+                autoComplete="username"
                 className="w-full px-4 py-3 rounded-lg border border-line text-primary placeholder:text-faint focus:outline-none focus:border-line-strong focus:ring-2 focus:ring-black/5 transition-all"
               />
             </div>
@@ -165,7 +167,8 @@ export const SignupPage: React.FC = () => {
                   required
                   value={password}
                   onChange={e => setPassword(e.target.value)}
-                  placeholder="At least 6 characters"
+                  placeholder="At least 8 characters"
+                  autoComplete="new-password"
                   className="w-full px-4 py-3 pr-10 rounded-lg border border-line text-primary placeholder:text-faint focus:outline-none focus:border-line-strong focus:ring-2 focus:ring-black/5 transition-all"
                 />
                 <button
@@ -185,6 +188,7 @@ export const SignupPage: React.FC = () => {
                 value={confirmPassword}
                 onChange={e => setConfirmPassword(e.target.value)}
                 placeholder="Repeat your password"
+                autoComplete="new-password"
                 className="w-full px-4 py-3 rounded-lg border border-line text-primary placeholder:text-faint focus:outline-none focus:border-line-strong focus:ring-2 focus:ring-black/5 transition-all"
               />
             </div>
