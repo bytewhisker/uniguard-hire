@@ -173,11 +173,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen, onCloseMobile })
         <div className="mt-3 pt-3 border-t border-line flex items-center justify-between px-1">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-full bg-panel-2 border border-line-strong flex items-center justify-center font-bold text-xs text-primary">
-              SJ
+              UG
             </div>
             <div>
-              <div className="text-xs font-medium text-primary">Sarah Jenkins</div>
-              <div className="text-[10px] text-tertiary">Recruitment Officer</div>
+              <div className="text-xs font-medium text-primary">Uniguard</div>
+              <div className="text-[10px] text-tertiary">Admin</div>
             </div>
           </div>
         </div>

@@ -18,7 +18,7 @@ export const ScheduleInterviewModal: React.FC<ScheduleInterviewModalProps> = ({
   const [applicantId, setApplicantId] = useState(defaultApplicantId || applicants[0]?.id || '');
   const [scheduledDate, setScheduledDate] = useState(new Date().toISOString().split('T')[0]);
   const [scheduledTime, setScheduledTime] = useState('14:00');
-  const [interviewerName, setInterviewerName] = useState('Sarah Jenkins (Recruitment Lead)');
+  const [interviewerName, setInterviewerName] = useState('Uniguard Recruitment');
   const [interviewType, setInterviewType] = useState<'in_person' | 'video' | 'phone'>('video');
   const [locationOrLink, setLocationOrLink] = useState('Google Meet Link: meet.google.com/ug-hire-check');
 
