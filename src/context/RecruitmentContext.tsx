@@ -234,7 +234,8 @@ export const RecruitmentProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const supabaseRowToApplicant = (row: any): Applicant => {
     const fd = row.form_data || {};
     supabaseIdsRef.current.add(row.id);
-    const docs = ((fd.activities || []) as any[])
+    const extraDocs = Array.isArray(fd.documents) ? (fd.documents as ApplicantDocument[]) : [];
+    const evidenceDocs = ((fd.activities || []) as any[])
       .filter((a: any) => a.evidence || a.evidencePath)
       .map((a: any, i: number): ApplicantDocument => ({
         id: `ev-${row.id}-${i}`,
@@ -244,11 +245,15 @@ export const RecruitmentProvider: React.FC<{ children: React.ReactNode }> = ({ c
         uploadedAt: '',
         size: 'Evidence',
       }));
-    // Persisted vetting checks win; fall back to defaults when the column is
-    // empty (fresh rows / migration not run yet).
-    const storedChecks = Array.isArray(row.vetting_data) && row.vetting_data.length > 0
+    const docs = [...extraDocs, ...evidenceDocs];
+    const rawVetting = (Array.isArray(row.vetting_data) && row.vetting_data.length > 0)
       ? row.vetting_data
+      : (Array.isArray(fd.vetting_data) && fd.vetting_data.length > 0)
+      ? fd.vetting_data
+      : (Array.isArray(fd.vettingChecks) && fd.vettingChecks.length > 0)
+      ? fd.vettingChecks
       : undefined;
+    const storedChecks = rawVetting;
     return {
       id: row.id,
       fullName: row.full_name || 'New Applicant',
@@ -279,6 +284,7 @@ export const RecruitmentProvider: React.FC<{ children: React.ReactNode }> = ({ c
             verifiedAt: c.verifiedAt,
           }))
         : defaultChecks(row.id),
+      _rawFormData: fd,
     } as Applicant;
   };
 
@@ -295,6 +301,9 @@ export const RecruitmentProvider: React.FC<{ children: React.ReactNode }> = ({ c
   // Only write a status to Supabase when it actually changed — stops the
   // every-refetch write storm that echoed back as duplicate update toasts.
   const lastSyncedStatusRef = React.useRef<Record<string, string>>({});
+  // Track when a vetting change was last made locally (ms timestamp), so that
+  // a rapid refetch within 30s doesn't clobber an optimistic UI update.
+  const lastVettingWriteRef = React.useRef<Record<string, number>>({});
   const publicUserRef = React.useRef(publicUser);
   useEffect(() => { publicUserRef.current = publicUser; }, [publicUser]);
 
@@ -316,10 +325,26 @@ export const RecruitmentProvider: React.FC<{ children: React.ReactNode }> = ({ c
     durationMinutes: row.duration_minutes ?? 45,
     location: row.location || 'Video Call (link to follow)',
     notes: row.notes || undefined,
-    rating: row.rating ?? undefined,
+    rating: typeof row.rating === 'number' ? row.rating : undefined,
     status: row.status || 'scheduled',
     completed: !!row.completed,
   });
+
+  const scheduledInterviewToInfo = (iv: ScheduledInterview): InterviewInfo => {
+    const d = iv.scheduledAt ? new Date(iv.scheduledAt) : new Date();
+    const isValidDate = !isNaN(d.getTime());
+    return {
+      id: iv.id,
+      scheduledDate: isValidDate ? d.toISOString().slice(0, 10) : '',
+      scheduledTime: isValidDate ? d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '',
+      interviewerName: 'Uniguard Recruitment',
+      locationOrLink: iv.location,
+      interviewType: iv.location.toLowerCase().includes('video') || iv.location.toLowerCase().includes('call') ? 'video' : 'in_person',
+      completed: iv.completed,
+      notes: iv.notes,
+      rating: iv.rating ?? 0,
+    };
+  };
 
   const supabaseRowToEmployee = (row: any): Employee => ({
     id: row.id,
@@ -379,11 +404,30 @@ export const RecruitmentProvider: React.FC<{ children: React.ReactNode }> = ({ c
       const byId = new Map(kept.map(a => [a.id, a]));
       incoming.forEach(a => {
         const local = prev.find(x => x.id === a.id);
-        // A stale refetch (in-flight when an admin action happened) must not
-        // clobber the stage we just set — lastSyncedStatus holds our intent
-        // until the DB write lands.
-        if (local && lastSyncedStatusRef.current[a.id] && lastSyncedStatusRef.current[a.id] !== a.currentStage) {
-          byId.set(a.id, { ...a, currentStage: lastSyncedStatusRef.current[a.id] as ApplicationStage });
+        if (local) {
+          // Server vetting data is always preferred — it's the persisted source of truth.
+          // Exception: if the admin made a vetting change within the last 30 seconds and
+          // the server hasn't echoed it back yet, keep the optimistic local state.
+          const recentLocalWrite = (lastVettingWriteRef.current[a.id] || 0);
+          const localWriteIsRecent = (Date.now() - recentLocalWrite) < 30_000;
+          const incomingHasVettingChanges = a.vettingChecks?.some(c => c.status !== 'pending' || c.notes);
+          const localHasVettingChanges = local.vettingChecks?.some(c => c.status !== 'pending' || c.notes);
+
+          // Use server vetting data if it has real content, OR if no recent local write.
+          const mergedChecks = (incomingHasVettingChanges || !localWriteIsRecent)
+            ? a.vettingChecks
+            : (localHasVettingChanges ? local.vettingChecks : a.vettingChecks);
+
+          // Stage: server wins unless the admin just updated it (tracked in lastSyncedStatusRef)
+          const targetStage = (lastSyncedStatusRef.current[a.id] as ApplicationStage) || a.currentStage;
+
+          byId.set(a.id, {
+            ...a,
+            currentStage: targetStage,
+            vettingChecks: mergedChecks,
+            documents: (local.documents && local.documents.length > a.documents.length) ? local.documents : a.documents,
+            interview: local.interview || a.interview,
+          });
         } else {
           byId.set(a.id, a);
         }
@@ -412,7 +456,25 @@ export const RecruitmentProvider: React.FC<{ children: React.ReactNode }> = ({ c
       // Employees + settings live in a later migration — never let a missing
       // table take down the core pipeline sync.
       supabase.from('employees').select('*').order('created_at', { ascending: false })
-        .then(({ data }) => { if (data) mergeEmployees(data.map(supabaseRowToEmployee)); }, () => {});
+        .then(({ data }) => {
+          if (data) {
+            const mapped = data.map(supabaseRowToEmployee);
+            mergeEmployees(mapped);
+            setApplicants(prevApps => prevApps.map(app => {
+              const matchingEmp = mapped.find(e => e.applicantId === app.id);
+              if (matchingEmp) {
+                return {
+                  ...app,
+                  employeeId: matchingEmp.employeeId,
+                  hiredDate: matchingEmp.hiredDate,
+                  hourlyRate: matchingEmp.hourlyRate,
+                  assignedSite: matchingEmp.assignedSite,
+                };
+              }
+              return app;
+            }));
+          }
+        }, () => {});
       supabase.from('settings').select('*').limit(1)
         .then(({ data }) => { if (data && data[0]) setSettings(supabaseRowToSettings(data[0])); }, () => {});
       supabase.from('activity_logs').select('*').order('created_at', { ascending: false }).limit(100)
@@ -448,20 +510,9 @@ export const RecruitmentProvider: React.FC<{ children: React.ReactNode }> = ({ c
         setApplicants(prevApps => prevApps.map(app => {
           const matchingIv = incoming.find(i => i.applicationId === app.id);
           if (matchingIv) {
-            const d = new Date(matchingIv.scheduledAt);
             return {
               ...app,
-              interview: {
-                id: matchingIv.id,
-                scheduledDate: d.toISOString().slice(0, 10),
-                scheduledTime: d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                interviewerName: 'Uniguard Recruitment',
-                locationOrLink: matchingIv.location,
-                interviewType: matchingIv.location.toLowerCase().includes('video') ? 'video' : 'in_person',
-                completed: matchingIv.completed,
-                notes: matchingIv.notes,
-                rating: matchingIv.rating ?? 0
-              }
+              interview: scheduledInterviewToInfo(matchingIv)
             };
           }
           return app;
@@ -493,21 +544,30 @@ export const RecruitmentProvider: React.FC<{ children: React.ReactNode }> = ({ c
         })
         .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'applications' }, (payload) => {
           const row = payload.new as any;
-          if (!supabaseIdsRef.current.has(row.id)) return;
-          if (VALID_STAGES.includes(row.status)) {
-            // The row's status is now known-good on the server (covers our own
-            // write echoes and changes made from another device).
-            lastSyncedStatusRef.current[row.id] = row.status;
-            setApplicants(prev => prev.map(a => a.id === row.id
-              ? { ...a, currentStage: row.status, fullName: row.full_name || a.fullName, appliedJobTitle: row.applied_job || a.appliedJobTitle }
-              : a));
-          }
-          if (Array.isArray(row.vetting_data) && row.vetting_data.length > 0) {
-            setApplicants(prev => prev.map(a => {
-              if (a.id !== row.id) return a;
-              return { ...a, vettingChecks: row.vetting_data as VettingCheckItem[] };
-            }));
-          }
+          supabaseIdsRef.current.add(row.id);
+          const fd = row.form_data || {};
+          const vetting = (Array.isArray(row.vetting_data) && row.vetting_data.length > 0)
+            ? row.vetting_data
+            : (Array.isArray(fd.vetting_data) && fd.vetting_data.length > 0)
+            ? fd.vetting_data
+            : (Array.isArray(fd.vettingChecks) && fd.vettingChecks.length > 0)
+            ? fd.vettingChecks
+            : null;
+
+          setApplicants(prev => prev.map(a => {
+            if (a.id !== row.id) return a;
+            const updatedStage = VALID_STAGES.includes(row.status) ? row.status : a.currentStage;
+            if (VALID_STAGES.includes(row.status)) {
+              lastSyncedStatusRef.current[row.id] = row.status;
+            }
+            return {
+              ...a,
+              fullName: row.full_name || a.fullName,
+              appliedJobTitle: row.applied_job || a.appliedJobTitle,
+              currentStage: updatedStage,
+              vettingChecks: vetting || a.vettingChecks,
+            };
+          }));
           // Notify the candidate in real time when their status changes
           if (publicUserRef.current && row.applicant_email === publicUserRef.current.email && VALID_STAGES.includes(row.status)) {
             const prevStatus = prevStageRef.current[row.id];
@@ -545,10 +605,22 @@ export const RecruitmentProvider: React.FC<{ children: React.ReactNode }> = ({ c
           const row = payload.new as any;
           const iv = supabaseRowToInterview(row);
           setInterviews(prev => prev.some(x => x.id === iv.id) ? prev : [...prev, iv]);
+          setApplicants(prev => prev.map(a => a.id === iv.applicationId ? { ...a, interview: scheduledInterviewToInfo(iv) } : a));
         })
         .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'interviews' }, (payload) => {
           const iv = supabaseRowToInterview(payload.new as any);
           setInterviews(prev => prev.map(x => x.id === iv.id ? iv : x));
+          setApplicants(prev => prev.map(a => a.id === iv.applicationId ? { ...a, interview: scheduledInterviewToInfo(iv) } : a));
+        })
+        .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'interviews' }, (payload) => {
+          const old = payload.old as any;
+          setInterviews(prev => {
+            const existing = prev.find(x => x.id === old.id);
+            if (existing) {
+              setApplicants(prevApps => prevApps.map(a => a.id === existing.applicationId ? { ...a, interview: undefined } : a));
+            }
+            return prev.filter(x => x.id !== old.id);
+          });
         })
         .subscribe(),
 
@@ -575,14 +647,32 @@ export const RecruitmentProvider: React.FC<{ children: React.ReactNode }> = ({ c
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'employees' }, (payload) => {
           const e = supabaseRowToEmployee(payload.new as any);
           setEmployees(prev => prev.some(x => x.id === e.id) ? prev : [e, ...prev]);
+          if (e.applicantId) {
+            setApplicants(prev => prev.map(a => a.id === e.applicantId
+              ? { ...a, employeeId: e.employeeId, hiredDate: e.hiredDate, hourlyRate: e.hourlyRate, assignedSite: e.assignedSite }
+              : a));
+          }
         })
         .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'employees' }, (payload) => {
           const e = supabaseRowToEmployee(payload.new as any);
           setEmployees(prev => prev.map(x => x.id === e.id ? e : x));
+          if (e.applicantId) {
+            setApplicants(prev => prev.map(a => a.id === e.applicantId
+              ? { ...a, employeeId: e.employeeId, hiredDate: e.hiredDate, hourlyRate: e.hourlyRate, assignedSite: e.assignedSite }
+              : a));
+          }
         })
         .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'employees' }, (payload) => {
           const old = payload.old as any;
-          setEmployees(prev => prev.filter(x => x.id !== old.id));
+          setEmployees(prev => {
+            const emp = prev.find(x => x.id === old.id);
+            if (emp && emp.applicantId) {
+              setApplicants(prevApps => prevApps.map(a => a.id === emp.applicantId
+                ? { ...a, employeeId: undefined, hiredDate: undefined, hourlyRate: undefined, assignedSite: undefined }
+                : a));
+            }
+            return prev.filter(x => x.id !== old.id);
+          });
         })
         .subscribe(),
 
@@ -1062,7 +1152,7 @@ export const RecruitmentProvider: React.FC<{ children: React.ReactNode }> = ({ c
     if (allRequiredApproved && (applicant.currentStage === 'vetting_in_progress' || applicant.currentStage === 'interview_completed' || applicant.currentStage === 'under_review')) {
       newStage = 'ready_for_contract';
       logActivity(applicant.id, applicant.fullName, 'All required vetting checks approved. Candidate is Ready for Contract!');
-      showToast('Ready for Contract ðŸŽ‰', `${applicant.fullName} has passed all required UK security checks!`, 'success');
+      showToast('Ready for Contract 🎉', `${applicant.fullName} has passed all required UK security checks!`, 'success');
     }
 
     const checkNameMap: Record<VettingCheckType, string> = {
@@ -1075,19 +1165,56 @@ export const RecruitmentProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
     logActivity(applicant.id, applicant.fullName, `Updated ${checkNameMap[checkType]} to ${status.toUpperCase()}`);
 
+    // Mark the time of this local write so reconcileApplicants won't clobber it
+    // within the 30-second window before the server echo arrives.
+    lastVettingWriteRef.current[applicantId] = Date.now();
+    // Eagerly record the new stage so periodic refetches don't revert it.
+    if (newStage !== applicant.currentStage) {
+      lastSyncedStatusRef.current[applicantId] = newStage;
+    }
+
     setApplicants(prev => prev.map(a => a.id === applicantId
       ? { ...a, vettingChecks: updatedChecks, currentStage: newStage }
       : a));
 
-    // Persist the full checklist so approvals survive refresh/reopen
+    // Persist the full checklist to Supabase so approvals survive refresh/reopen.
+    // We write vetting_data (dedicated column from migration 013/014) AND embed
+    // it inside form_data as a belt-and-suspenders fallback.
     if (supabaseIdsRef.current.has(applicantId) && supabase) {
-      supabase.from('applications')
-        .update({ vetting_data: updatedChecks })
+      const client = supabase;
+      const existingFd = (applicant as any)._rawFormData || {};
+      const updatedFd = { ...existingFd, vetting_data: updatedChecks, vettingChecks: updatedChecks };
+
+      client.from('applications')
+        .update({
+          vetting_data: updatedChecks,
+          form_data: updatedFd,
+          status: newStage,
+        })
         .eq('id', applicantId)
         .then(({ error }) => {
           if (error) {
-            console.error('Vetting persist failed:', error.message);
-            showToast('Sync Failed', `Vetting status was not saved: ${error.message}`, 'error');
+            // vetting_data column may not exist yet — run supabase/014_fix_vetting_column_and_rls.sql
+            console.error('[Uniguard] Vetting persist error (column may be missing — run migration 014):', error.message);
+            // Fallback: write only to form_data (works even without the dedicated column)
+            client.from('applications')
+              .update({ form_data: updatedFd, status: newStage })
+              .eq('id', applicantId)
+              .then(({ error: err2 }) => {
+                if (err2) {
+                  console.error('[Uniguard] Fallback vetting persist also failed:', err2.message);
+                  showToast(
+                    'Approval Not Saved',
+                    'Could not save to database. Run supabase/014_fix_vetting_column_and_rls.sql in your Supabase SQL editor.',
+                    'error'
+                  );
+                  // Revert the timestamp so the next refetch can correct the UI
+                  delete lastVettingWriteRef.current[applicantId];
+                } else {
+                  // form_data write succeeded — vetting will reload from form_data on next sync
+                  console.info('[Uniguard] Vetting saved via form_data fallback (run migration 014 to use dedicated column).');
+                }
+              });
           }
         });
     }
@@ -1225,12 +1352,15 @@ export const RecruitmentProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
   // 5. Send Contract
   const sendContract = (applicantId: string) => {
+    const isDbRow = supabaseIdsRef.current.has(applicantId);
+    let contractDoc: ApplicantDocument | null = null;
+
     setApplicants(prev => prev.map(applicant => {
       if (applicant.id !== applicantId) return applicant;
 
-      const contractDoc = {
+      contractDoc = {
         id: `doc-contract-${Date.now()}`,
-        name: `Employment_Contract_${applicant.fullName.replace(' ', '_')}.pdf`,
+        name: `Employment_Contract_${applicant.fullName.replace(/\s+/g, '_')}.pdf`,
         type: 'contract' as const,
         fileUrl: '#',
         uploadedAt: new Date().toISOString().split('T')[0],
@@ -1246,7 +1376,24 @@ export const RecruitmentProvider: React.FC<{ children: React.ReactNode }> = ({ c
       };
     }));
 
-    showToast('Contract Dispatched ðŸ“„', 'Employment contract sent to applicant via e-signature link.', 'success');
+    if (isDbRow && supabase) {
+      lastSyncedStatusRef.current[applicantId] = 'contract_sent';
+      const targetApp = applicants.find(a => a.id === applicantId);
+      const existingDocs = targetApp ? targetApp.documents : [];
+      const updatedDocs = contractDoc ? [contractDoc, ...existingDocs] : existingDocs;
+
+      supabase.from('applications').update({
+        status: 'contract_sent',
+        form_data: {
+          ...(targetApp ? { mobile: targetApp.phone, address: targetApp.address, postcode: targetApp.postcode, niNumber: targetApp.nationalInsuranceNo, siaLicence: targetApp.siaLicenceNo } : {}),
+          documents: updatedDocs
+        }
+      }).eq('id', applicantId).then(({ error }) => {
+        if (error) delete lastSyncedStatusRef.current[applicantId];
+      });
+    }
+
+    showToast('Contract Dispatched 📄', 'Employment contract sent to applicant via e-signature link.', 'success');
   };
 
   // 6. Convert to Employee (Hire!) — guarded so the same applicant can never
@@ -1518,11 +1665,34 @@ export const RecruitmentProvider: React.FC<{ children: React.ReactNode }> = ({ c
         { id: `chk-2-${newId}`, type: 'sia_licence', title: 'SIA Licence Verification', description: 'Check Home Office SIA Public Register', isRequired: true, status: 'pending', notes: '', externalUrl: 'https://services.sia.homeoffice.gov.uk/licence-checker' },
         { id: `chk-3-${newId}`, type: 'references', title: '5-Year Reference Check', description: 'Contact previous security employers', isRequired: true, status: 'pending', notes: '', externalUrl: '#' },
         { id: `chk-4-${newId}`, type: 'credit_check', title: 'Credit Check (Optional)', description: 'Optional financial audit', isRequired: false, status: 'pending', notes: '', externalUrl: 'https://www.experian.co.uk' },
-        { id: `chk-5-${newId}`, type: 'companies_house', title: 'Companies House Check', description: 'Check director listings', isRequired: false, status: 'pending', notes: '', externalUrl: 'https://find-and-update.company-information.service.gov.uk' }
+        { id: `chk-5-${newId}`, type: 'companies_house', title: 'Companies House Check', description: 'Check director listings', isRequired: false, status: 'pending', notes: '', externalUrl: '#' }
       ]
     };
 
     setApplicants(prev => [fullApplicant, ...prev]);
+
+    if (supabase) {
+      supabase.from('applications').insert({
+        full_name: fullApplicant.fullName,
+        applicant_email: fullApplicant.email,
+        applied_job: fullApplicant.appliedJobTitle,
+        status: 'applied',
+        vetting_data: fullApplicant.vettingChecks,
+        form_data: {
+          mobile: fullApplicant.phone,
+          address: fullApplicant.address,
+          postcode: fullApplicant.postcode,
+          niNumber: fullApplicant.nationalInsuranceNo,
+          siaLicence: fullApplicant.siaLicenceNo,
+          documents: fullApplicant.documents
+        }
+      }).select().then(({ data, error }) => {
+        if (!error && data && data[0]) {
+          const rowApp = supabaseRowToApplicant(data[0]);
+          setApplicants(prev => prev.map(a => a.id === newId ? rowApp : a));
+        }
+      });
+    }
 
     // Increment job applicant count
     setJobs(prev => prev.map(j => j.id === fullApplicant.appliedJobId ? { ...j, applicantsCount: j.applicantsCount + 1 } : j));

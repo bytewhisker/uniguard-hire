@@ -24,6 +24,7 @@ export const ApplicantDrawer: React.FC = () => {
   const { 
     selectedApplicant, 
     setSelectedApplicant, 
+    applicants,
     updateCheckStatus, 
     sendContract, 
     convertToEmployee,
@@ -44,7 +45,7 @@ export const ApplicantDrawer: React.FC = () => {
 
   if (!selectedApplicant) return null;
 
-  const applicant = selectedApplicant;
+  const applicant = applicants.find(a => a.id === selectedApplicant.id) || selectedApplicant;
 
   const handleScheduleConfirm = () => {
     if (!draftDate) {
