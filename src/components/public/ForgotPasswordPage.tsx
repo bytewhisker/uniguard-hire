@@ -19,7 +19,7 @@ export const ForgotPasswordPage: React.FC = () => {
       return;
     }
     setBusy(true);
-    const ok = await requestPasswordReset(email);
+    const ok = await requestPasswordReset(email, captchaToken ?? undefined);
     setBusy(false);
     if (ok) {
       setSent(true);

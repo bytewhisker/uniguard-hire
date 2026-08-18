@@ -31,7 +31,7 @@ export const SignupPage: React.FC = () => {
       setError('Password must be at least 8 characters.');
       return;
     }
-    const result = await publicSignup(name, email, password);
+    const result = await publicSignup(name, email, password, captchaToken ?? undefined);
     if (result.ok) {
       if (result.needsConfirm) {
         setPendingConfirm(email);

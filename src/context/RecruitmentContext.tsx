@@ -110,10 +110,10 @@ interface RecruitmentContextType {
 
   // Public user auth
   publicUser: { name: string; email: string } | null;
-  publicLogin: (email: string, password: string) => Promise<boolean>;
-  publicSignup: (name: string, email: string, password: string) => Promise<{ ok: boolean; needsConfirm: boolean }>;
+  publicLogin: (email: string, password: string, captchaToken?: string) => Promise<boolean>;
+  publicSignup: (name: string, email: string, password: string, captchaToken?: string) => Promise<{ ok: boolean; needsConfirm: boolean }>;
   googleLogin: () => Promise<boolean>;
-  requestPasswordReset: (email: string) => Promise<boolean>;
+  requestPasswordReset: (email: string, captchaToken?: string) => Promise<boolean>;
   publicLogout: () => void;
 
   }
@@ -968,12 +968,16 @@ export const RecruitmentProvider: React.FC<{ children: React.ReactNode }> = ({ c
   }, []);
 
   // Public user auth (Supabase Auth)
-  const publicLogin = async (email: string, password: string): Promise<boolean> => {
+  const publicLogin = async (email: string, password: string, captchaToken?: string): Promise<boolean> => {
     if (!supabase) {
       showToast('Login Failed', 'Backend is not configured — set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.', 'error');
       return false;
     }
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+      options: captchaToken ? { captchaToken } : undefined,
+    });
     if (error) {
       showToast('Login Failed', 'Invalid email or password.', 'error');
       return false;
@@ -982,7 +986,7 @@ export const RecruitmentProvider: React.FC<{ children: React.ReactNode }> = ({ c
     return true;
   };
 
-  const publicSignup = async (name: string, email: string, password: string): Promise<{ ok: boolean; needsConfirm: boolean }> => {
+  const publicSignup = async (name: string, email: string, password: string, captchaToken?: string): Promise<{ ok: boolean; needsConfirm: boolean }> => {
     if (!supabase) {
       showToast('Signup Failed', 'Backend is not configured — set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.', 'error');
       return { ok: false, needsConfirm: false };
@@ -992,9 +996,8 @@ export const RecruitmentProvider: React.FC<{ children: React.ReactNode }> = ({ c
       password,
       options: {
         data: { full_name: name },
-        // Confirmation links must return to this app (not Supabase's Site URL),
-        // so they work on both the live site and localhost.
         emailRedirectTo: window.location.origin,
+        captchaToken,
       },
     });
     if (error) {
@@ -1035,13 +1038,14 @@ export const RecruitmentProvider: React.FC<{ children: React.ReactNode }> = ({ c
   };
 
   // Forgot password: sends a recovery email with a link to /reset-password
-  const requestPasswordReset = async (email: string): Promise<boolean> => {
+  const requestPasswordReset = async (email: string, captchaToken?: string): Promise<boolean> => {
     if (!supabase) {
       showToast('Reset Failed', 'Backend is not configured — set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.', 'error');
       return false;
     }
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${window.location.origin}/reset-password`,
+      captchaToken,
     });
     if (error) {
       showToast('Reset Failed', error.message, 'error');

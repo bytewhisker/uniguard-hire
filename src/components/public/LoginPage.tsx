@@ -20,7 +20,7 @@ export const LoginPage: React.FC = () => {
       setError('Please enter your email and password.');
       return;
     }
-    const success = await publicLogin(email, password);
+    const success = await publicLogin(email, password, captchaToken ?? undefined);
     if (success) {
       setActivePage('user-dashboard');
     } else {
