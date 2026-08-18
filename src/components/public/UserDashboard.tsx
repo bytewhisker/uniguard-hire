@@ -85,7 +85,7 @@ const StageFlow: React.FC<{ app: Applicant }> = ({ app }) => {
 };
 
 const InterviewCard: React.FC<{ app: Applicant }> = ({ app }) => {
-  const { interviewsByApplication } = useRecruitment();
+  const { interviewsByApplication, showToast } = useRecruitment();
   const upcoming = interviewsByApplication(app.id).filter(i => !i.completed)[0];
 
   if (!upcoming) return null;
@@ -93,33 +93,73 @@ const InterviewCard: React.FC<{ app: Applicant }> = ({ app }) => {
   const days = Math.ceil((date.getTime() - Date.now()) / 86400000);
   const isVideo = /video|call|zoom|teams|meet/i.test(upcoming.location);
 
+  // Generate Google Calendar Link
+  const gcalTitle = encodeURIComponent(`Uniguard Security Interview — ${app.appliedJobTitle}`);
+  const startTimeISO = date.toISOString().replace(/-|:|\.\d\d\d/g, '');
+  const endDate = new Date(date.getTime() + (upcoming.durationMinutes || 45) * 60000);
+  const endTimeISO = endDate.toISOString().replace(/-|:|\.\d\d\d/g, '');
+  const gcalUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${gcalTitle}&dates=${startTimeISO}/${endTimeISO}&details=${encodeURIComponent(upcoming.notes || 'Uniguard Security Recruitment Interview')}&location=${encodeURIComponent(upcoming.location)}`;
+
+  const copyDetails = () => {
+    const text = `Uniguard Interview: ${date.toLocaleDateString('en-GB')} at ${date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}. Location: ${upcoming.location}`;
+    navigator.clipboard.writeText(text);
+    showToast('Copied to Clipboard', 'Interview details copied.', 'info');
+  };
+
   return (
-    <div className="mt-4 p-4 rounded-xl border border-purple-200 bg-purple-50/60">
-      <div className="flex items-center justify-between mb-3">
-        <h4 className="text-xs font-bold text-purple-700 flex items-center gap-2">
-          {isVideo ? <Video className="w-4 h-4" /> : <Building2 className="w-4 h-4" />}
-          Interview Scheduled
+    <div className="mt-5 p-5 rounded-2xl border-2 border-purple-300 bg-gradient-to-br from-purple-50 to-indigo-50/40 shadow-sm space-y-3">
+      <div className="flex items-center justify-between">
+        <h4 className="text-xs font-bold text-purple-900 flex items-center gap-2">
+          {isVideo ? <Video className="w-4 h-4 text-purple-600 animate-pulse" /> : <Building2 className="w-4 h-4 text-purple-600" />}
+          Official Interview Scheduled
         </h4>
-        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-          days < 0 ? 'bg-emerald-100 text-emerald-700' : days === 0 ? 'bg-rose-100 text-rose-600' : days <= 2 ? 'bg-amber-100 text-amber-700' : 'bg-purple-100 text-purple-700'
+        <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full border ${
+          days < 0 ? 'bg-emerald-100 text-emerald-700 border-emerald-300' : days === 0 ? 'bg-rose-100 text-rose-700 border-rose-300 animate-pulse' : 'bg-purple-100 text-purple-800 border-purple-300'
         }`}>
-          {days < 0 ? 'Done ✓' : days === 0 ? 'Today!' : days === 1 ? 'Tomorrow' : `In ${days} days`}
+          {days < 0 ? 'Completed ✓' : days === 0 ? 'TODAY!' : days === 1 ? 'Tomorrow' : `In ${days} Days`}
         </span>
       </div>
-      <div className="flex items-center gap-2 text-sm font-semibold text-purple-900 mb-1">
-        <Calendar className="w-4 h-4 text-purple-500" />
-        {date.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}
-        <span className="font-mono">• {date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}</span>
+
+      <div className="space-y-1.5">
+        <div className="flex items-center gap-2 text-sm font-bold text-purple-950">
+          <Calendar className="w-4 h-4 text-purple-600 shrink-0" />
+          <span>{date.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</span>
+          <span className="font-mono text-purple-700 font-extrabold">• {date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}</span>
+        </div>
+
+        <div className="flex items-center gap-2 text-xs text-purple-800">
+          <MapPin className="w-4 h-4 text-purple-500 shrink-0" />
+          <span className="font-semibold">{upcoming.location}</span>
+          <span className="text-purple-400">•</span>
+          <span>{upcoming.durationMinutes} Minutes</span>
+        </div>
       </div>
-      <div className="flex items-center gap-2 text-xs text-purple-800/80 mb-1">
-        <MapPin className="w-3.5 h-3.5" />
-        {upcoming.location} • {upcoming.durationMinutes} min
-      </div>
+
       {upcoming.notes && (
-        <p className="text-[11px] text-purple-800/70 bg-white/70 rounded-lg p-2.5 border border-purple-100 leading-relaxed">
+        <div className="text-xs text-purple-900 bg-white/90 rounded-xl p-3 border border-purple-200/80 leading-relaxed">
+          <span className="font-bold text-purple-950 block mb-0.5">Instructions from Recruitment Team:</span>
           {upcoming.notes}
-        </p>
+        </div>
       )}
+
+      {/* Action Buttons for Candidate */}
+      <div className="flex items-center gap-2 pt-1">
+        <a
+          href={gcalUrl}
+          target="_blank"
+          rel="noreferrer"
+          className="px-3.5 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition-all"
+        >
+          <Calendar className="w-3.5 h-3.5" />
+          Add to Google Calendar
+        </a>
+        <button
+          onClick={copyDetails}
+          className="px-3.5 py-1.5 rounded-xl bg-white hover:bg-purple-100 text-purple-900 font-semibold text-xs border border-purple-200 transition-colors"
+        >
+          Copy Details
+        </button>
+      </div>
     </div>
   );
 };

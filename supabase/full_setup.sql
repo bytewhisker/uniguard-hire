@@ -1,6 +1,6 @@
 -- ============================================================================
--- Uniguard Hire - FULL DATABASE SETUP (NEW VERSION - FUTURE SAFE)
--- Safe to run on fresh Supabase projects.
+-- Uniguard Hire - FULL DATABASE SETUP (PRODUCTION READY - MASTER SETUP)
+-- Safe to run on fresh or existing Supabase projects. Completely idempotent.
 -- ============================================================================
 
 -- 1. Create Tables
@@ -20,9 +20,12 @@ create table if not exists public.applications (
   applied_job text,
   status text not null default 'applied',
   form_data jsonb default '{}'::jsonb,
+  vetting_data jsonb default '[]'::jsonb,
   created_at timestamptz not null default now()
 );
 
+-- Ensure vetting_data column exists if applications table pre-existed
+alter table public.applications add column if not exists vetting_data jsonb default '[]'::jsonb;
 create index if not exists applications_user_id_idx on public.applications (user_id);
 
 create table if not exists public.jobs (
@@ -46,10 +49,14 @@ create table if not exists public.interviews (
   duration_minutes integer,
   location text,
   notes text,
+  rating integer,
   status text default 'scheduled',
   completed boolean default false,
   created_at timestamptz not null default now()
 );
+
+alter table public.interviews add column if not exists notes text;
+alter table public.interviews add column if not exists rating integer;
 
 create table if not exists public.messages (
   id uuid primary key default gen_random_uuid(),
@@ -62,7 +69,48 @@ create table if not exists public.messages (
   read_by_user boolean not null default false
 );
 
--- 2. Profiles Handle New User Trigger
+create table if not exists public.employees (
+  id uuid primary key default gen_random_uuid(),
+  applicant_id uuid references public.applications(id) on delete set null,
+  employee_id text not null unique,
+  full_name text not null default '',
+  email text not null default '',
+  phone text not null default '',
+  role_title text not null default '',
+  sia_licence_no text not null default '',
+  sia_licence_sector text not null default '',
+  sia_licence_expiry text not null default '',
+  hired_date text not null default '',
+  assigned_site text not null default '',
+  hourly_rate numeric not null default 0,
+  status text not null default 'active',
+  created_at timestamptz not null default now()
+);
+
+create unique index if not exists employees_one_per_applicant
+  on public.employees (applicant_id)
+  where applicant_id is not null;
+
+create table if not exists public.settings (
+  id integer primary key default 1 check (id = 1),
+  company_name text not null default 'Uniguard Security Services UK Ltd',
+  company_number text not null default '',
+  sia_acs_approved boolean not null default true,
+  updated_at timestamptz not null default now()
+);
+
+insert into public.settings (id) values (1) on conflict (id) do nothing;
+
+create table if not exists public.activity_logs (
+  id uuid primary key default gen_random_uuid(),
+  applicant_id uuid references public.applications(id) on delete cascade,
+  applicant_name text not null default '',
+  action text not null default '',
+  "user" text not null default '',
+  created_at timestamptz not null default now()
+);
+
+-- 2. Profiles Trigger & Admin Helper
 create or replace function public.handle_new_user()
 returns trigger
 language plpgsql security definer set search_path = public
@@ -80,7 +128,6 @@ create trigger on_auth_user_created
   after insert on auth.users
   for each row execute function public.handle_new_user();
 
--- Admin check
 create or replace function public.is_admin()
 returns boolean
 language sql stable security definer set search_path = public
@@ -91,11 +138,11 @@ as $$
   );
 $$;
 
--- 3. Admin Account Creation
+-- 3. Default Admin Account Setup
 do $$
 declare
   v_admin_email text := 'uniguardhire@admin.com';
-  v_admin_pass  text := 'REPLACE-ME-StrongPass!123';
+  v_admin_pass  text := 'UniguardAdmin2026!';
   v_uid uuid;
 begin
   select id into v_uid from auth.users where email = v_admin_email;
@@ -129,16 +176,19 @@ begin
     set email = v_admin_email, is_admin = true;
 end $$;
 
--- 4. Enable RLS
+-- 4. Enable Row Level Security (RLS) & Policies
 alter table public.profiles enable row level security;
 alter table public.applications enable row level security;
 alter table public.jobs enable row level security;
 alter table public.interviews enable row level security;
 alter table public.messages enable row level security;
+alter table public.employees enable row level security;
+alter table public.settings enable row level security;
+alter table public.activity_logs enable row level security;
 
 -- Profiles RLS
 drop policy if exists "profiles read own" on public.profiles;
-create policy "profiles read own" on public.profiles for select to authenticated using (auth.uid() = id);
+create policy "profiles read own" on public.profiles for select to authenticated using (auth.uid() = id or public.is_admin());
 
 -- Applications RLS
 drop policy if exists "applications insert own" on public.applications;
@@ -166,7 +216,7 @@ create policy "interviews select owner or admin" on public.interviews for select
 drop policy if exists "interviews update admin" on public.interviews;
 create policy "interviews update admin" on public.interviews for update to authenticated using (public.is_admin());
 
--- Messages RLS
+-- Messages RLS & Security Trigger
 create or replace function public.force_message_sender() returns trigger language plpgsql security definer set search_path = public as $$
 declare is_admin bool := public.is_admin();
 begin
@@ -188,7 +238,19 @@ create policy "messages update own thread or admin" on public.messages for updat
 drop policy if exists "messages delete admin" on public.messages;
 create policy "messages delete admin" on public.messages for delete to authenticated using (public.is_admin());
 
--- 5. Storage Schema (Future Safe - No Trigger needed, relies on bucket config and standard policies)
+-- Employees RLS
+drop policy if exists "employees admin all" on public.employees;
+create policy "employees admin all" on public.employees for all to authenticated using (public.is_admin()) with check (public.is_admin());
+
+-- Settings RLS
+drop policy if exists "settings admin all" on public.settings;
+create policy "settings admin all" on public.settings for all to authenticated using (public.is_admin()) with check (public.is_admin());
+
+-- Activity Logs RLS
+drop policy if exists "activity_logs admin all" on public.activity_logs;
+create policy "activity_logs admin all" on public.activity_logs for all to authenticated using (public.is_admin()) with check (public.is_admin());
+
+-- 5. Storage Evidence Bucket & Policies
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 values (
   'evidence', 
@@ -218,8 +280,11 @@ create policy "evidence select own or admin"
       and ((storage.foldername(name))[1] = auth.uid()::text or public.is_admin())
     );
 
--- 6. Realtime
+-- 6. Enable Realtime Publications (Safe Idempotent Block)
 do $$ begin alter publication supabase_realtime add table public.applications; exception when duplicate_object then null; end $$;
 do $$ begin alter publication supabase_realtime add table public.interviews; exception when duplicate_object then null; end $$;
 do $$ begin alter publication supabase_realtime add table public.messages; exception when duplicate_object then null; end $$;
 do $$ begin alter publication supabase_realtime add table public.jobs; exception when duplicate_object then null; end $$;
+do $$ begin alter publication supabase_realtime add table public.employees; exception when duplicate_object then null; end $$;
+do $$ begin alter publication supabase_realtime add table public.settings; exception when duplicate_object then null; end $$;
+do $$ begin alter publication supabase_realtime add table public.activity_logs; exception when duplicate_object then null; end $$;

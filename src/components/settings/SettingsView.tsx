@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { useRecruitment } from '../../context/RecruitmentContext';
 import { Settings as SettingsIcon, ShieldCheck, Building } from 'lucide-react';
 
@@ -12,7 +12,6 @@ export const SettingsView: React.FC = () => {
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
     saveSettings({ companyName, companyNumber, siaAcsApproved });
-    showToast('Settings Saved', 'UK security company profile & vetting rules updated.', 'success');
   };
 
   return (

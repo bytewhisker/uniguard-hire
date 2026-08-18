@@ -113,7 +113,7 @@ export const DashboardView: React.FC = () => {
             <Sparkles className="w-3.5 h-3.5 text-[#AF7C28]" />
             <span>{today}</span>
           </div>
-          <h2 className="text-xl font-extrabold text-primary mt-1">Good day, Sarah</h2>
+          <h2 className="text-xl font-extrabold text-primary mt-1">Good day!</h2>
           <p className="text-xs text-secondary mt-0.5">Here is everything you need to do today.</p>
         </div>
 
