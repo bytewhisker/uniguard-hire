@@ -1,6 +1,6 @@
 ﻿import React from 'react';
 import { useRecruitment } from '../../context/RecruitmentContext';
-import { Briefcase, MapPin, PoundSterling, Users, ShieldCheck, Plus, Trash2, Pencil } from 'lucide-react';
+import { Briefcase, MapPin, PoundSterling, Users, ShieldCheck, Car, Plus, Trash2, Pencil } from 'lucide-react';
 import type { Job } from '../../types/recruitment';
 
 interface JobsViewProps {
@@ -97,6 +97,10 @@ export const JobsView: React.FC<JobsViewProps> = ({ onOpenCreateJob, onOpenEditJ
                   <div className="flex items-center gap-1.5 text-primary">
                     <ShieldCheck className="w-3.5 h-3.5 text-amber-400 shrink-0" />
                     <span>{job.siaRequired ? 'SIA Required' : 'No SIA Needed'}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-primary">
+                    <Car className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                    <span>{job.drivingLicenceRequired ? 'UK Driving Licence Required' : 'No Driving Licence Needed'}</span>
                   </div>
                   <div className="flex items-center gap-1.5 text-primary">
                     <Users className="w-3.5 h-3.5 text-indigo-400 shrink-0" />

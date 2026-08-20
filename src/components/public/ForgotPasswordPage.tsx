@@ -33,12 +33,9 @@ export const ForgotPasswordPage: React.FC = () => {
       <div className="min-h-screen bg-page flex flex-col">
         <nav className="border-b border-line bg-panel/80 backdrop-blur-sm">
           <div className="max-w-7xl mx-auto px-6 py-4">
-            <button onClick={() => setActivePage('landing')} className="flex items-center gap-3 cursor-pointer">
-              <img src="/uniguardlogo.png" alt="Uniguard" className="h-10 w-auto object-contain" />
-              <div className="text-left">
-                <h1 className="font-bold text-lg text-primary leading-none">Uniguard</h1>
-                <p className="text-[10px] text-secondary tracking-widest uppercase mt-0.5">Security Recruitment</p>
-              </div>
+            <button onClick={() => setActivePage('landing')} className="flex flex-col items-center cursor-pointer">
+              <img src="/uniguardlogo.png" alt="Uniguard Security" className="h-9 w-auto object-contain" />
+              <span className="text-[9px] font-bold text-secondary tracking-widest uppercase mt-0.5">Security Recruitment</span>
             </button>
           </div>
         </nav>
@@ -78,12 +75,9 @@ export const ForgotPasswordPage: React.FC = () => {
     <div className="min-h-screen bg-page flex flex-col">
       <nav className="border-b border-line bg-panel/80 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <button onClick={() => setActivePage('landing')} className="flex items-center gap-3 cursor-pointer">
-            <img src="/uniguardlogo.png" alt="Uniguard" className="h-10 w-auto object-contain" />
-            <div className="text-left">
-              <h1 className="font-bold text-lg text-primary leading-none">Uniguard</h1>
-              <p className="text-[10px] text-secondary tracking-widest uppercase mt-0.5">Security Recruitment</p>
-            </div>
+          <button onClick={() => setActivePage('landing')} className="flex flex-col items-center cursor-pointer">
+            <img src="/uniguardlogo.png" alt="Uniguard Security" className="h-9 w-auto object-contain" />
+            <span className="text-[9px] font-bold text-secondary tracking-widest uppercase mt-0.5">Security Recruitment</span>
           </button>
           <button
             onClick={() => setActivePage('login')}

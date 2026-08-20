@@ -18,6 +18,7 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({ isOpen, onClose,
   const [payRate, setPayRate] = useState('15.50');
   const [employmentType, setEmploymentType] = useState<Job['employmentType']>('Full-Time');
   const [siaRequired, setSiaRequired] = useState<boolean>(true);
+  const [drivingLicenceRequired, setDrivingLicenceRequired] = useState<boolean>(false);
   const [status, setStatus] = useState<Job['status']>('active');
   const [description, setDescription] = useState('');
 
@@ -29,6 +30,7 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({ isOpen, onClose,
       setPayRate(String(editingJob.payRate));
       setEmploymentType(editingJob.employmentType);
       setSiaRequired(editingJob.siaRequired);
+      setDrivingLicenceRequired(editingJob.drivingLicenceRequired);
       setStatus(editingJob.status);
       setDescription(editingJob.description);
     } else {
@@ -38,6 +40,7 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({ isOpen, onClose,
       setPayRate('15.50');
       setEmploymentType('Full-Time');
       setSiaRequired(true);
+      setDrivingLicenceRequired(false);
       setStatus('active');
       setDescription('');
     }
@@ -55,6 +58,7 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({ isOpen, onClose,
       payRate: parseFloat(payRate) || 15.00,
       employmentType,
       siaRequired,
+      drivingLicenceRequired,
       status,
       description
     };
@@ -153,6 +157,18 @@ export const CreateJobModal: React.FC<CreateJobModalProps> = ({ isOpen, onClose,
               <select
                 value={siaRequired ? 'yes' : 'no'}
                 onChange={e => setSiaRequired(e.target.value === 'yes')}
+                className="w-full linear-input rounded-xl p-3"
+              >
+                <option value="yes">Yes</option>
+                <option value="no">No</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-primary font-medium mb-1">UK Driving Licence Required?</label>
+              <select
+                value={drivingLicenceRequired ? 'yes' : 'no'}
+                onChange={e => setDrivingLicenceRequired(e.target.value === 'yes')}
                 className="w-full linear-input rounded-xl p-3"
               >
                 <option value="yes">Yes</option>

@@ -89,6 +89,7 @@ export interface Job {
   payRate: number; // e.g. 15.50 (£/hr)
   employmentType: 'Full-Time' | 'Part-Time' | 'Zero-Hours' | 'Shift-Based';
   siaRequired: boolean;
+  drivingLicenceRequired: boolean;
   status: 'active' | 'draft' | 'closed';
   createdDate: string;
   description: string;

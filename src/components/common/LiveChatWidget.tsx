@@ -91,11 +91,11 @@ export const LiveChatWidget: React.FC = () => {
       {/* Floating bubble (bottom-left) */}
       <button
         onClick={() => setOpen(!open)}
-        className="fixed bottom-5 left-5 z-[60] group"
+        className="fixed bottom-5 right-5 z-[60] group"
         aria-label="Chat with us"
       >
         {unreadCount > 0 && !open && (
-          <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-rose-500 text-white text-[10px] font-bold flex items-center justify-center border-2 border-white shadow z-10">
+          <span className="absolute -top-1 -left-1 w-5 h-5 rounded-full bg-rose-500 text-white text-[10px] font-bold flex items-center justify-center border-2 border-white shadow z-10">
             {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         )}
@@ -115,7 +115,7 @@ export const LiveChatWidget: React.FC = () => {
 
       {/* Chat panel */}
       {open && (
-        <div className="fixed bottom-24 left-5 z-[60] w-[360px] max-w-[calc(100vw-2rem)] h-[560px] max-h-[calc(100vh-8.5rem)] bg-white border border-line rounded-2xl shadow-2xl overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-150">
+        <div className="fixed bottom-24 right-5 z-[60] w-[360px] max-w-[calc(100vw-2rem)] h-[560px] max-h-[calc(100vh-8.5rem)] bg-white border border-line rounded-2xl shadow-2xl overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-150">
           {/* Header */}
           <div className="px-4 py-3.5 bg-gradient-to-r from-[#7a5a22] to-[#AF7C28] flex items-center gap-3">
             <div className="w-9 h-9 rounded-full bg-white/15 border border-white/25 flex items-center justify-center text-white shrink-0">

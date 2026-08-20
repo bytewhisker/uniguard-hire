@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { useRecruitment } from '../../context/RecruitmentContext';
 import { 
   LayoutDashboard, 
@@ -88,15 +88,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen, onCloseMobile })
   const asideContent = (
     <>
       <div>
-        {/* Company Header */}
         <div className="p-4 border-b border-line flex items-center justify-between">
-          <button onClick={() => { setActivePage('landing'); onCloseMobile(); }} className="flex items-center gap-3 cursor-pointer text-left w-full">
-            <img src="/uniguardlogo.png" alt="Uniguard" className="h-9 w-auto object-contain" />
-            <div>
-              <div className="font-bold text-sm text-primary tracking-tight">Admin Panel</div>
-              <div className="text-[11px] text-tertiary">Uniguard Hire</div>
-            </div>
+          <button onClick={() => { setActivePage('landing'); onCloseMobile(); }} className="flex flex-col items-start cursor-pointer">
+            <img src="/uniguardlogo.png" alt="Uniguard Security" className="h-8 w-auto object-contain" />
+            <span className="text-[9px] font-bold text-secondary tracking-widest uppercase mt-0.5">Security Recruitment</span>
           </button>
+          <span className="font-semibold text-[10px] text-[#AF7C28] px-2 py-0.5 rounded bg-[#AF7C28]/10 border border-[#AF7C28]/20 uppercase tracking-wider shrink-0">Admin</span>
           <button onClick={onCloseMobile} className="lg:hidden p-1.5 rounded-lg text-tertiary hover:text-primary hover:bg-panel-2 transition-colors">
             <X className="w-5 h-5" />
           </button>

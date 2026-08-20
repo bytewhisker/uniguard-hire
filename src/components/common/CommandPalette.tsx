@@ -197,7 +197,7 @@ export const CommandPalette: React.FC = () => {
         {/* Footer info */}
         <div className="px-4 py-2 border-t border-line bg-page-dim flex items-center justify-between text-[11px] text-tertiary">
           <span>Press <kbd className="px-1.5 py-0.5 bg-panel-2 rounded text-primary font-mono">ESC</kbd> to close</span>
-          <span>Uniguard Vetting Engine MVP</span>
+          <span>Uniguard Security Recruitment System</span>
         </div>
       </div>
     </div>

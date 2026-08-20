@@ -14,8 +14,8 @@ export const InterviewCalendarView: React.FC = () => {
   const [notesInput, setNotesInput] = useState<Record<string, string>>({});
 
   const handleComplete = (applicantId: string, passed: boolean) => {
-    const rating = ratingInput[applicantId] || 4;
-    const notes = notesInput[applicantId] || 'Candidate demonstrated strong security protocol knowledge during interview.';
+    const rating = ratingInput[applicantId] || 0;
+    const notes = notesInput[applicantId] || '';
     completeInterview(applicantId, notes, rating, passed);
   };
 
@@ -123,9 +123,9 @@ export const InterviewCalendarView: React.FC = () => {
                         <button
                           key={star}
                           onClick={() => setRatingInput(prev => ({ ...prev, [applicant.id]: star }))}
-                          className={`p-1 rounded ${ (ratingInput[applicant.id] || 4) >= star ? 'text-amber-400' : 'text-faint' }`}
+                          className={`p-1 rounded ${ (ratingInput[applicant.id] || 0) >= star ? 'text-amber-400' : 'text-faint' }`}
                         >
-                          <Star className={`w-4 h-4 ${(ratingInput[applicant.id] || 4) >= star ? 'fill-amber-400' : ''}`} />
+                          <Star className={`w-4 h-4 ${(ratingInput[applicant.id] || 0) >= star ? 'fill-amber-400' : ''}`} />
                         </button>
                       ))}
                     </div>

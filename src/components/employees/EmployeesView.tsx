@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { useRecruitment } from '../../context/RecruitmentContext';
 import { UserCheck, AlertTriangle, MapPin, Search } from 'lucide-react';
 
@@ -95,7 +95,7 @@ export const EmployeesView: React.FC = () => {
                     </td>
 
                     <td className="p-4 font-mono font-bold text-[#AF7C28]">
-                      Â£{emp.hourlyRate.toFixed(2)}/hr
+                      £{emp.hourlyRate.toFixed(2)}/hr
                     </td>
 
                     <td className="p-4">

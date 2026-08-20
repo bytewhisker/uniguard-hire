@@ -10,12 +10,9 @@ export const LandingPage: React.FC = () => {
       {/* Navigation */}
       <nav className="border-b border-line bg-panel/80 backdrop-blur-sm sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <button onClick={() => setActivePage('landing')} className="flex items-center gap-3 cursor-pointer">
-            <img src="/uniguardlogo.png" alt="Uniguard" className="h-10 w-auto object-contain" />
-            <div className="text-left">
-              <h1 className="font-bold text-lg text-primary leading-none">Uniguard</h1>
-              <p className="text-[10px] text-secondary tracking-widest uppercase mt-0.5">Security Recruitment</p>
-            </div>
+          <button onClick={() => setActivePage('landing')} className="flex flex-col items-center cursor-pointer">
+            <img src="/uniguardlogo.png" alt="Uniguard Security" className="h-9 w-auto object-contain" />
+            <span className="text-[9px] font-bold text-secondary tracking-widest uppercase mt-0.5">Security Recruitment</span>
           </button>
           <div className="flex items-center gap-3">
             {publicUser ? (
@@ -56,16 +53,16 @@ export const LandingPage: React.FC = () => {
           <div className="max-w-3xl">
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border text-xs font-semibold tracking-wide mb-6" style={{ borderColor: 'rgba(175,124,40,0.3)', color: '#8f6420', backgroundColor: 'rgba(175,124,40,0.06)' }}>
               <Award className="w-3.5 h-3.5" style={{ color: '#AF7C28' }} />
-              <span>NOW HIRING — SIA SECURITY OFFICERS</span>
+              <span>NOW HIRING: SIA SECURITY OFFICERS</span>
             </div>
             <h1 className="text-5xl sm:text-6xl font-bold text-primary tracking-tight leading-[1.1] mb-6">
               Build Your Career in{' '}
               <span style={{ color: '#AF7C28' }}>Professional Security</span>
             </h1>
             <p className="text-lg text-secondary leading-relaxed max-w-2xl mb-8">
-              Join Uniguard's elite team of SIA-licensed security professionals. We provide 
-              static guarding, mobile patrols, and event security across the UK. Create an account 
-              to browse vacancies and submit your application.
+              Join Uniguard, an established UK security contractor delivering static guarding, 
+              mobile patrols, and event security for commercial and public-sector clients. 
+              Create an account to browse live vacancies and submit your application for SIA-licensed roles.
             </p>
             <div className="flex flex-wrap gap-4">
               <button
@@ -181,12 +178,9 @@ export const LandingPage: React.FC = () => {
       <footer className="bg-panel border-t border-line py-12">
         <div className="max-w-7xl mx-auto px-6">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-            <button onClick={() => setActivePage('landing')} className="flex items-center gap-3 cursor-pointer">
-              <img src="/uniguardlogo.png" alt="Uniguard" className="h-8 w-auto object-contain" />
-              <div className="text-left">
-                <p className="font-semibold text-primary text-sm">Uniguard Security</p>
-                <p className="text-xs text-secondary">Professional Security Recruitment</p>
-              </div>
+            <button onClick={() => setActivePage('landing')} className="flex flex-col items-center cursor-pointer">
+              <img src="/uniguardlogo.png" alt="Uniguard Security" className="h-8 w-auto object-contain" />
+              <span className="text-[9px] font-bold text-secondary tracking-widest uppercase mt-0.5">Security Recruitment</span>
             </button>
             <div className="flex items-center gap-6 text-sm text-secondary">
               <span>ACS Approved Security Contractor</span>

@@ -34,8 +34,9 @@ const AuthRequired: React.FC = () => {
   return (
     <div className="min-h-screen bg-page flex items-center justify-center px-6">
       <div className="w-full max-w-md text-center">
-        <button onClick={() => setActivePage('landing')} className="mb-8 inline-block cursor-pointer">
-          <img src="/uniguardlogo.png" alt="Uniguard" className="h-10 w-auto object-contain mx-auto" />
+        <button onClick={() => setActivePage('landing')} className="flex flex-col items-center mx-auto mb-8 cursor-pointer">
+          <img src="/uniguardlogo.png" alt="Uniguard Security" className="h-9 w-auto object-contain mx-auto" />
+          <span className="text-[9px] font-bold text-secondary tracking-widest uppercase mt-0.5">Security Recruitment</span>
         </button>
         <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4" style={{ backgroundColor: 'rgba(175,124,40,0.1)' }}>
           <LockKeyhole className="w-7 h-7" style={{ color: '#AF7C28' }} />

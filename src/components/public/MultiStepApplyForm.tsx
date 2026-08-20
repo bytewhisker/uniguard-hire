@@ -114,7 +114,9 @@ interface ActivityItem {
 }
 
 const emptyForm = {
-  fullName: '', dob: '', position: '', address: '', postcode: '', telephone: '', mobile: '',
+  fullName: '', dob: '', position: '',
+  addressLine1: '', addressLine2: '', postTown: '', postcode: '', address: '',
+  telephone: '', mobile: '',
   niNumber: '', siaLicence: '', hasDrivingLicence: '', drivingLicenceNumber: '',
   education: '', hasFirstAid: '', languages: '', lenAtAddress: '', prevAddresses: '',
   q1: '', q1Details: '', q2: '', q2Details: '', q3: '', q3Details: '',
@@ -213,28 +215,6 @@ export const MultiStepApplyForm: React.FC = () => {
 
   const removeActivity = (id: number) => {
     setActivities(prev => prev.length > 1 ? prev.filter(a => a.id !== id) : prev);
-  };
-
-  const autoFill = () => {
-    setForm({
-      fullName: 'John Smith', dob: '1990-05-15', position: 'Security Officer — Static Site',
-      address: '12 High Street, London', postcode: 'EC1A 1BB', telephone: '020 7123 4567', mobile: '07700 900123',
-      niNumber: 'QQ 12 34 56 C', siaLicence: 'SIA123456', hasDrivingLicence: 'yes',
-      drivingLicenceNumber: 'SMITH901055J9AB', education: 'City of London College', hasFirstAid: 'yes',
-      languages: 'English, Spanish', lenAtAddress: '5plus', prevAddresses: '',
-      q1: 'no', q1Details: '', q2: 'no', q2Details: '', q3: 'no', q3Details: '',
-      q4: 'no', q4Details: '', q5: 'no', q5Details: '', q6: 'no', q6Details: '', q7: 'yes', q7Details: '',
-      ref1Name: 'Sarah Jones', ref1Address: '5 Park Lane, London', ref1Postcode: 'W1K 1AH', ref1Occupation: 'Teacher', ref1Known: '8',
-      ref2Name: 'David Brown', ref2Address: '22 Green Road, London', ref2Postcode: 'N1 2AB', ref2Occupation: 'Engineer', ref2Known: '5',
-      nokName: 'Emma Smith', nokAddress: '12 High Street, London', nokPostcode: 'EC1A 1BB', nokTelephone: '020 7123 4567',
-      nokMobile: '07700 900456', nokRelationship: 'Wife',
-      charRefName: 'Michael Green', charRefAddress: '44 Oak Avenue, London', charRefPostcode: 'SW1 1AA', charRefTelephone: '07700 900789', charRefKnown: '6',
-      criminalDetails: '', agree1: true, agree2: true, printName: 'John Smith', signature: 'John Smith', sigDate: '',
-    });
-    setActivities([
-      sampleActivity(1, 'work', 'Security Officer — SecuriGuard UK', '2021-06-15', '2024-12-20', '07700 900123', 'hr@securiguard.co.uk'),
-      sampleActivity(2, 'education', 'City of London College', '2016-09-01', '2020-06-30', '', ''),
-    ]);
   };
 
   const clearForm = () => {
@@ -341,15 +321,11 @@ export const MultiStepApplyForm: React.FC = () => {
     <div className="min-h-screen bg-page">
       <div className="border-b border-line bg-panel sticky top-0 z-50">
         <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
-          <button onClick={() => setActivePage('landing')} className="flex items-center gap-3 cursor-pointer">
-            <img src="/uniguardlogo.png" alt="Uniguard" className="h-9 w-auto object-contain" />
-            <div className="text-left">
-              <h1 className="font-bold text-base text-primary leading-none">Application for Employment</h1>
-              <p className="text-[10px] text-secondary tracking-wider uppercase mt-0.5">Uniguard Security UK</p>
-            </div>
+          <button onClick={() => setActivePage('landing')} className="flex flex-col items-center cursor-pointer">
+            <img src="/uniguardlogo.png" alt="Uniguard Security" className="h-9 w-auto object-contain" />
+            <span className="text-[9px] font-bold text-secondary tracking-widest uppercase mt-0.5">Security Recruitment</span>
           </button>
           <div className="flex items-center gap-2">
-            <button onClick={autoFill} className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-line text-secondary hover:text-primary hover:border-line-strong transition-colors">Auto Fill</button>
             <button onClick={clearForm} className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-line text-secondary hover:text-rose-500 hover:border-rose-300 transition-colors">Clear</button>
             <button onClick={() => setActivePage('user-dashboard')} className="text-sm font-medium text-secondary hover:text-primary transition-colors">← Back to Dashboard</button>
           </div>
@@ -408,7 +384,7 @@ export const MultiStepApplyForm: React.FC = () => {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-secondary mb-1.5">Date of birth <span style={{ color: '#AF7C28' }}>•</span></label>
-                      <input type="date" required value={form.dob} onChange={e => update('dob', e.target.value)} className="w-full px-4 py-2.5 rounded-lg border border-line text-sm focus:outline-none focus:border-line-strong bg-panel" />
+                      <input type="date" required value={form.dob} onChange={e => update('dob', e.target.value)} placeholder="mm/dd/yyyy" className="w-full px-4 py-2.5 rounded-lg border border-line text-sm focus:outline-none focus:border-line-strong bg-panel" />
                     </div>
                     <div className="sm:col-span-2">
                       <label className="block text-sm font-medium text-secondary mb-1.5">Position applied for <span style={{ color: '#AF7C28' }}>•</span></label>
@@ -421,14 +397,82 @@ export const MultiStepApplyForm: React.FC = () => {
                         <option>Other</option>
                       </select>
                     </div>
-                    <div className="sm:col-span-2">
-                      <label className="block text-sm font-medium text-secondary mb-1.5">Home address <span style={{ color: '#AF7C28' }}>•</span></label>
-                      <textarea required value={form.address} onChange={e => update('address', e.target.value)} rows={3} placeholder="House number and street" className="w-full px-4 py-2.5 rounded-lg border border-line text-sm focus:outline-none focus:border-line-strong bg-panel"></textarea>
+
+                    {/* UK Home Address Section */}
+                    <div className="sm:col-span-2 space-y-4 pt-1">
+                      <label className="block text-sm font-medium text-secondary">Home address <span style={{ color: '#AF7C28' }}>•</span></label>
+                      
+                      <div className="space-y-3">
+                        <div>
+                          <label className="block text-xs font-normal text-secondary mb-1">Address line 1 - number and street name</label>
+                          <input
+                            type="text"
+                            required
+                            value={form.addressLine1}
+                            onChange={e => {
+                              const val = e.target.value;
+                              setForm(prev => {
+                                const next = { ...prev, addressLine1: val };
+                                next.address = [val, next.addressLine2, next.postTown].filter(Boolean).join(', ');
+                                return next;
+                              });
+                            }}
+                            placeholder="14 Elmwood Court"
+                            className="w-full px-4 py-2.5 rounded-lg border border-line text-sm focus:outline-none focus:border-line-strong bg-panel"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-normal text-secondary mb-1">Address line 2 - locality name (if required)</label>
+                          <input
+                            type="text"
+                            value={form.addressLine2}
+                            onChange={e => {
+                              const val = e.target.value;
+                              setForm(prev => {
+                                const next = { ...prev, addressLine2: val };
+                                next.address = [next.addressLine1, val, next.postTown].filter(Boolean).join(', ');
+                                return next;
+                              });
+                            }}
+                            placeholder="Optional"
+                            className="w-full px-4 py-2.5 rounded-lg border border-line text-sm focus:outline-none focus:border-line-strong bg-panel"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-normal text-secondary mb-1">Post town</label>
+                          <input
+                            type="text"
+                            required
+                            value={form.postTown}
+                            onChange={e => {
+                              const val = e.target.value;
+                              setForm(prev => {
+                                const next = { ...prev, postTown: val };
+                                next.address = [next.addressLine1, next.addressLine2, val].filter(Boolean).join(', ');
+                                return next;
+                              });
+                            }}
+                            placeholder="LEEDS"
+                            className="w-full px-4 py-2.5 rounded-lg border border-line text-sm focus:outline-none focus:border-line-strong bg-panel uppercase"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-normal text-secondary mb-1">Postcode</label>
+                          <input
+                            type="text"
+                            required
+                            value={form.postcode}
+                            onChange={e => update('postcode', e.target.value)}
+                            placeholder="LS6 3AP"
+                            className="w-full px-4 py-2.5 rounded-lg border border-line text-sm focus:outline-none focus:border-line-strong bg-panel font-mono uppercase"
+                          />
+                        </div>
+                      </div>
                     </div>
-                    <div className="sm:col-span-2">
-                      <label className="block text-sm font-medium text-secondary mb-1.5">Postcode <span style={{ color: '#AF7C28' }}>•</span></label>
-                      <input type="text" required value={form.postcode} onChange={e => update('postcode', e.target.value)} placeholder="e.g. EC1A 1BB" className="w-full px-4 py-2.5 rounded-lg border border-line text-sm focus:outline-none focus:border-line-strong bg-panel font-mono" />
-                    </div>
+
                     <div>
                       <label className="block text-sm font-medium text-secondary mb-1.5">Telephone</label>
                       <input type="tel" value={form.telephone} onChange={e => update('telephone', e.target.value)} className="w-full px-4 py-2.5 rounded-lg border border-line text-sm focus:outline-none focus:border-line-strong bg-panel" />

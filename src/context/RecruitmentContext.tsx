@@ -229,6 +229,7 @@ export const RecruitmentProvider: React.FC<{ children: React.ReactNode }> = ({ c
       payRate: Number(row.pay_rate ?? 0),
       employmentType: types.includes(row.employment_type) ? row.employment_type : 'Full-Time',
       siaRequired: !!row.sia_required,
+      drivingLicenceRequired: !!row.driving_licence_required,
       status: statuses.includes(row.status) ? row.status : 'active',
       createdDate: row.created_date || (row.created_at || '').slice(0, 10),
       description: row.description || '',
@@ -1574,6 +1575,7 @@ export const RecruitmentProvider: React.FC<{ children: React.ReactNode }> = ({ c
       pay_rate: jobData.payRate,
       employment_type: jobData.employmentType,
       sia_required: jobData.siaRequired,
+      driving_licence_required: jobData.drivingLicenceRequired,
       status: jobData.status,
       created_date: newJob.createdDate,
       description: jobData.description,
@@ -1612,6 +1614,7 @@ export const RecruitmentProvider: React.FC<{ children: React.ReactNode }> = ({ c
       pay_rate: jobData.payRate,
       employment_type: jobData.employmentType,
       sia_required: jobData.siaRequired,
+      driving_licence_required: jobData.drivingLicenceRequired,
       status: jobData.status,
       description: jobData.description,
     }).eq('id', id).select();

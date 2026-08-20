@@ -20,7 +20,7 @@ export const ScheduleInterviewModal: React.FC<ScheduleInterviewModalProps> = ({
   const [scheduledTime, setScheduledTime] = useState('14:00');
   const [interviewerName, setInterviewerName] = useState('Uniguard Recruitment');
   const [interviewType, setInterviewType] = useState<'in_person' | 'video' | 'phone'>('video');
-  const [locationOrLink, setLocationOrLink] = useState('Google Meet Link: meet.google.com/ug-hire-check');
+  const [locationOrLink, setLocationOrLink] = useState('');
 
   if (!isOpen) return null;
 

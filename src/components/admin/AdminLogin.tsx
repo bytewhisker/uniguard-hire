@@ -24,8 +24,9 @@ export const AdminLogin: React.FC = () => {
   return (
     <div className="min-h-screen bg-page flex items-center justify-center px-6">
       <div className="w-full max-w-md">
-        <button onClick={() => setActivePage('landing')} className="block mx-auto mb-8 cursor-pointer">
-          <img src="/uniguardlogo.png" alt="Uniguard" className="h-10 w-auto object-contain mx-auto" />
+        <button onClick={() => setActivePage('landing')} className="flex flex-col items-center mx-auto mb-8 cursor-pointer">
+          <img src="/uniguardlogo.png" alt="Uniguard Security" className="h-9 w-auto object-contain mx-auto" />
+          <span className="text-[9px] font-bold text-secondary tracking-widest uppercase mt-0.5">Security Recruitment</span>
         </button>
 
         <div className="rounded-2xl border border-line bg-panel p-8 shadow-lg">

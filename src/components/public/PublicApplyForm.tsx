@@ -14,7 +14,7 @@ import {
 export const PublicApplyForm: React.FC = () => {
   const { jobs, addApplicant, setActivePage, setSelectedApplicant, applicants } = useRecruitment();
 
-  const [selectedJobId, setSelectedJobId] = useState(jobs[0]?.id || 'job-1');
+  const [selectedJobId, setSelectedJobId] = useState(jobs[0]?.id || '');
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -23,7 +23,7 @@ export const PublicApplyForm: React.FC = () => {
   const [nationalInsuranceNo, setNationalInsuranceNo] = useState('');
   const [siaLicenceNo, setSiaLicenceNo] = useState('');
   const [siaLicenceSector, setSiaLicenceSector] = useState<any>('Door Supervision');
-  const [siaLicenceExpiry, setSiaLicenceExpiry] = useState('2028-02-28');
+  const [siaLicenceExpiry, setSiaLicenceExpiry] = useState('');
   const [uploadedCvName, setUploadedCvName] = useState<string | null>(null);
   const [agreedTerms, setAgreedTerms] = useState(true);
 
@@ -46,9 +46,9 @@ export const PublicApplyForm: React.FC = () => {
       fullName,
       email,
       phone,
-      address: address || '14 Regent Street, London',
-      postcode: postcode || 'SW1Y 4PH',
-      nationalInsuranceNo: nationalInsuranceNo || 'QQ 88 99 00 B',
+      address,
+      postcode,
+      nationalInsuranceNo,
       siaLicenceNo,
       siaLicenceSector,
       siaLicenceExpiry,
@@ -114,7 +114,7 @@ export const PublicApplyForm: React.FC = () => {
           <div className="p-4 rounded-2xl bg-panel-2 border border-line max-w-md mx-auto text-left text-xs space-y-2 font-mono">
             <div className="flex justify-between text-tertiary">
               <span>Candidate Reference:</span>
-              <span className="text-emerald-600 font-bold">#UG-APP-2026</span>
+              <span className="text-emerald-600 font-bold">#UG-{new Date().toISOString().slice(0, 10).replace(/-/g, '')}-{siaLicenceNo.slice(-4).toUpperCase() || 'NEW'}</span>
             </div>
             <div className="flex justify-between text-tertiary">
               <span>SIA Licence Number:</span>

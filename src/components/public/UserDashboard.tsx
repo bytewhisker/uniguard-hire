@@ -170,7 +170,7 @@ const CongratsBanner: React.FC<{ app: Applicant }> = ({ app }) => {
       <div className="mt-4 p-5 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-200 flex items-center gap-4">
         <PartyPopper className="w-8 h-8 shrink-0" />
         <div>
-          <div className="font-bold text-base">Congratulations! You're hired! 🎉</div>
+          <div className="font-bold text-base">Congratulations! You're hired!</div>
           <div className="text-xs text-white/90 mt-0.5">
             {app.employeeId ? `Welcome to the Uniguard team! Your employee ID is ${app.employeeId}.` : 'Welcome to the Uniguard team!'}
             {app.hiredDate && ` Hired on ${app.hiredDate}.`}
@@ -188,7 +188,7 @@ const CongratsBanner: React.FC<{ app: Applicant }> = ({ app }) => {
           <div className="text-xs text-emerald-700/80">
             {app.currentStage === 'contract_sent'
               ? "Check your email for your employment contract. Once signed, you're officially hired!"
-              : 'Your vetting checks passed — our team is preparing your employment contract.'}
+              : 'Your vetting checks passed. Our team is preparing your employment contract.'}
           </div>
         </div>
       </div>
@@ -273,7 +273,7 @@ const UserChat: React.FC<{ app: Applicant; apps: Applicant[] }> = ({ app, apps }
             </span>
           </div>
           <div className="text-white/75 text-[11px] truncate">
-            Replies within 1 working day — chat about {activeApp.appliedJobTitle || 'your application'}
+            Replies within 1 working day. Chat about {activeApp.appliedJobTitle || 'your application'}
           </div>
         </div>
         {apps.length > 1 && (
@@ -414,12 +414,9 @@ export const UserDashboard: React.FC = () => {
       {/* Top Bar */}
       <header className="border-b border-line bg-panel sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <button onClick={() => setActivePage('landing')} className="flex items-center gap-3 cursor-pointer">
-            <img src="/uniguardlogo.png" alt="Uniguard" className="h-9 w-auto object-contain" />
-            <div className="text-left">
-              <h1 className="font-bold text-base text-primary leading-none">Uniguard Careers</h1>
-              <p className="text-[10px] text-secondary tracking-wider uppercase mt-0.5">Candidate Portal</p>
-            </div>
+          <button onClick={() => setActivePage('landing')} className="flex flex-col items-center cursor-pointer">
+            <img src="/uniguardlogo.png" alt="Uniguard Security" className="h-9 w-auto object-contain" />
+            <span className="text-[9px] font-bold text-secondary tracking-widest uppercase mt-0.5">Security Recruitment</span>
           </button>
           <div className="flex items-center gap-4">
             <div className="text-right hidden sm:block">
@@ -438,7 +435,7 @@ export const UserDashboard: React.FC = () => {
       </header>
 
       {/* Tabs */}
-      <div className="border-b border-line bg-panel/60 sticky top-[69px] z-40">
+      <div className="border-b border-line bg-panel backdrop-blur-md sticky top-[69px] z-40">
         <div className="max-w-7xl mx-auto px-6 flex items-center gap-1">
           <button
             onClick={() => setTab('overview')}
@@ -494,7 +491,7 @@ export const UserDashboard: React.FC = () => {
             {/* Main column */}
             <div className="lg:col-span-2 space-y-6">
               <h2 className="text-2xl font-bold text-primary mb-2">Welcome, {publicUser?.name}</h2>
-              <p className="text-secondary -mt-3 mb-2">Track your applications live — status updates and messages appear instantly.</p>
+              <p className="text-secondary -mt-3 mb-2">Track your applications live. Status updates and messages appear instantly.</p>
 
               {sortedApps.length > 0 ? (
                 sortedApps.map(app => (
@@ -556,6 +553,7 @@ export const UserDashboard: React.FC = () => {
                     </div>
                     <div className="flex items-center justify-between mt-3 pt-3 border-t border-line">
                       <span className="text-xs text-secondary">SIA: <span className="font-medium text-primary">{job.siaRequired ? 'Required' : 'Not Required'}</span></span>
+                      <span className="text-xs text-secondary">UK Licence: <span className="font-medium text-primary">{job.drivingLicenceRequired ? 'Required' : 'Not Required'}</span></span>
                       <span className="text-sm font-bold font-mono" style={{ color: '#AF7C28' }}>£{job.payRate.toFixed(2)}/hr</span>
                     </div>
                   </div>
@@ -608,7 +606,15 @@ export const UserDashboard: React.FC = () => {
                 <h3 className="font-bold text-primary mb-2">Need Help?</h3>
                 <p className="text-sm text-secondary leading-relaxed">
                   Message us anytime from the chat tab, or email{' '}
-                  <span className="font-medium" style={{ color: '#AF7C28' }}>recruitment@uniguard.co.uk</span>
+                  <a
+                    href="mailto:recruitment@uniguard.co.uk"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-medium underline underline-offset-2 hover:opacity-80"
+                    style={{ color: '#AF7C28' }}
+                  >
+                    recruitment@uniguard.co.uk
+                  </a>
                 </p>
               </div>
             </div>

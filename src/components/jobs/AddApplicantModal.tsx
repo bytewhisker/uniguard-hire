@@ -18,8 +18,8 @@ export const AddApplicantModal: React.FC<AddApplicantModalProps> = ({ isOpen, on
   const [nationalInsuranceNo, setNationalInsuranceNo] = useState('');
   const [siaLicenceNo, setSiaLicenceNo] = useState('');
   const [siaLicenceSector, setSiaLicenceSector] = useState<any>('Door Supervision');
-  const [siaLicenceExpiry, setSiaLicenceExpiry] = useState('2027-11-30');
-  const [appliedJobId, setAppliedJobId] = useState(jobs[0]?.id || 'job-1');
+  const [siaLicenceExpiry, setSiaLicenceExpiry] = useState('');
+  const [appliedJobId, setAppliedJobId] = useState(jobs[0]?.id || '');
 
   if (!isOpen) return null;
 
